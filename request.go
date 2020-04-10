@@ -106,11 +106,12 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 
 // FromRequest wraps an http.Request in a retryablehttp.Request
 func FromRequest(r *http.Request) (*Request, error) {
-	bodyReader, _, err := getBodyReaderAndContentLength(r.Body)
+	bodyReader, contentLength, err := getBodyReaderAndContentLength(r.Body)
 	if err != nil {
 		return nil, err
 	}
-	// Could assert contentLength == r.ContentLength
+	r.ContentLength = contentLength
+
 	return &Request{bodyReader, r, Metrics{}}, nil
 }
 
