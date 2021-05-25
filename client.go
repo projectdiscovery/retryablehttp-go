@@ -12,7 +12,7 @@ import (
 type Client struct {
 	// HTTPClient is the internal HTTP client (http1x + http2 via connection upgrade upgrade).
 	HTTPClient *http.Client
-	// HTTPClient is the internal HTTP client configured to fallback to native http2
+	// HTTPClient is the internal HTTP client configured to fallback to native http2 at transport level
 	HTTPClient2 *http.Client
 
 	// RequestLogHook allows a user-supplied function to be called
