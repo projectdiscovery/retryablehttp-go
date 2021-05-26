@@ -3,13 +3,17 @@ package retryablehttp
 import (
 	"net/http"
 	"time"
+
+	"golang.org/x/net/http2"
 )
 
 // Client is used to make HTTP requests. It adds additional functionality
 // like automatic retries to tolerate minor outages.
 type Client struct {
-	// HTTPClient is the internal HTTP client.
+	// HTTPClient is the internal HTTP client (http1x + http2 via connection upgrade upgrade).
 	HTTPClient *http.Client
+	// HTTPClient is the internal HTTP client configured to fallback to native http2 at transport level
+	HTTPClient2 *http.Client
 
 	// RequestLogHook allows a user-supplied function to be called
 	// before each retry.
@@ -73,16 +77,22 @@ var DefaultOptionsSingle = Options{
 // NewClient creates a new Client with default settings.
 func NewClient(options Options) *Client {
 	httpclient := DefaultClient()
+	httpclient2 := DefaultClient()
+	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
+		return nil
+	}
+
 	// if necessary adjusts per-request timeout proportionally to general timeout (30%)
 	if options.Timeout > time.Second*15 {
 		httpclient.Timeout = time.Duration(options.Timeout.Seconds()*0.3) * time.Second
 	}
 
 	c := &Client{
-		HTTPClient: httpclient,
-		CheckRetry: DefaultRetryPolicy(),
-		Backoff:    DefaultBackoff(),
-		options:    options,
+		HTTPClient:  httpclient,
+		HTTPClient2: httpclient2,
+		CheckRetry:  DefaultRetryPolicy(),
+		Backoff:     DefaultBackoff(),
+		options:     options,
 	}
 
 	c.setKillIdleConnections()
@@ -91,10 +101,16 @@ func NewClient(options Options) *Client {
 
 // NewWithHTTPClient creates a new Client with default settings and provided http.Client
 func NewWithHTTPClient(client *http.Client, options Options) *Client {
+	httpclient2 := DefaultClient()
+	httpclient2.Transport = client.Transport.(*http.Transport).Clone()
+	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
+		return nil
+	}
 	c := &Client{
-		HTTPClient: client,
-		CheckRetry: DefaultRetryPolicy(),
-		Backoff:    DefaultBackoff(),
+		HTTPClient:  client,
+		HTTPClient2: httpclient2,
+		CheckRetry:  DefaultRetryPolicy(),
+		Backoff:     DefaultBackoff(),
 
 		options: options,
 	}

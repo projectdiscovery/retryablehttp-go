@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -49,6 +50,12 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 
 		// Check if we should continue with retries.
 		checkOK, checkErr := c.CheckRetry(req.Context(), resp, err)
+
+		// if err is equal to missing minor protocol version retry with http/2
+		if err != nil && strings.Contains(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"") {
+			resp, err = c.HTTPClient2.Do(req.Request)
+			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
+		}
 
 		if err != nil {
 			// Increment the failure counter as the request failed
