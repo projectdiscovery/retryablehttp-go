@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -52,8 +51,17 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 		checkOK, checkErr := c.CheckRetry(req.Context(), resp, err)
 
 		// if err is equal to missing minor protocol version retry with http/2
-		if err != nil && strings.Contains(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"") {
+		if err != nil && malformedHTTP2VersionRegex.MatchString(err.Error()) {
 			resp, err = c.HTTPClient2.Do(req.Request)
+			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
+		}
+
+		// As a last effort checks if the server advertised to use HTTP3
+		if ok, h3ipport, err := HasHTTP3(resp); ok && err == nil {
+			// TODO: here we should make the h3 client dial the udp ip:port advertised by the server in order to
+			// complete the TLS 1.3 handshake
+			_ = h3ipport
+			resp, err = c.HTTPClient3.Do(req.Request)
 			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
 		}
 

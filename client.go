@@ -1,9 +1,12 @@
 package retryablehttp
 
 import (
+	"crypto/tls"
 	"net/http"
 	"time"
 
+	quic "github.com/lucas-clemente/quic-go"
+	"github.com/lucas-clemente/quic-go/http3"
 	"golang.org/x/net/http2"
 )
 
@@ -12,8 +15,11 @@ import (
 type Client struct {
 	// HTTPClient is the internal HTTP client (http1x + http2 via connection upgrade upgrade).
 	HTTPClient *http.Client
-	// HTTPClient is the internal HTTP client configured to fallback to native http2 at transport level
+	// HTTPClient2 is the internal HTTP2 client configured to fallback to native http2 at transport level
 	HTTPClient2 *http.Client
+	// HTTPClient3 contains expertimental support for HTTP3 QUIC protocol - According to RFC7838 if the protocol is supported the response will contain the following header with the alternate service ip:port:
+	// Alt-Svc: h3="ip:port"
+	HTTPClient3 *http.Client
 
 	// RequestLogHook allows a user-supplied function to be called
 	// before each retry.
@@ -81,6 +87,14 @@ func NewClient(options Options) *Client {
 	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
 		return nil
 	}
+	http3client := DefaultClient()
+	h3Transport := &http3.RoundTripper{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+		QuicConfig: &quic.Config,
+	}
+	http3client.Transport = h3Transport
 
 	// if necessary adjusts per-request timeout proportionally to general timeout (30%)
 	if options.Timeout > time.Second*15 {
@@ -90,6 +104,7 @@ func NewClient(options Options) *Client {
 	c := &Client{
 		HTTPClient:  httpclient,
 		HTTPClient2: httpclient2,
+		HTTPClient3: http3client,
 		CheckRetry:  DefaultRetryPolicy(),
 		Backoff:     DefaultBackoff(),
 		options:     options,
@@ -106,9 +121,18 @@ func NewWithHTTPClient(client *http.Client, options Options) *Client {
 	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
 		return nil
 	}
+	http3client := DefaultClient()
+	h3Transport := &http3.RoundTripper{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+		QuicConfig: &quic.Config,
+	}
+	http3client.Transport = h3Transport
 	c := &Client{
 		HTTPClient:  client,
 		HTTPClient2: httpclient2,
+		HTTPClient3: http3client,
 		CheckRetry:  DefaultRetryPolicy(),
 		Backoff:     DefaultBackoff(),
 

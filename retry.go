@@ -18,6 +18,8 @@ var (
 	// scheme specified in the URL is invalid. This error isn't typed
 	// specifically so we resort to matching on the error string.
 	schemeErrorRegex = regexp.MustCompile(`unsupported protocol scheme`)
+	// In some cases proxies like burp lack the minor version of the HTTP protocol, which is required by the go standard library
+	malformedHTTP2VersionRegex = regexp.MustCompile(`net/http: HTTP/1.x transport connection broken: malformed HTTP version "HTTP/2"`)
 )
 
 // CheckRetry specifies a policy for handling retries. It is called
