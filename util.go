@@ -18,13 +18,21 @@ func Discard(req *Request, resp *http.Response, RespReadLimit int64) {
 	resp.Body.Close()
 }
 
+func HasHTTP2(resp *http.Response) (bool, string, error) {
+	return HasHTTPX(resp, "h2")
+}
+
 func HasHTTP3(resp *http.Response) (bool, string, error) {
+	return HasHTTPX(resp, "h3")
+}
+
+func HasHTTPX(resp *http.Response, protocol string) (bool, string, error) {
 	if resp == nil {
 		return false, "", errors.New("response is nil")
 	}
 
-	if altsvcHeader := resp.Header.Get("Alt-Svc"); stringsutil.HasPrefixI(altsvcHeader, "h3=") {
-		ipPort := stringsutil.Between(altsvcHeader, "h3=\"", "\"")
+	if altsvcHeader := resp.Header.Get("Alt-Svc"); stringsutil.HasPrefixI(altsvcHeader, protocol+"=") {
+		ipPort := stringsutil.Before(stringsutil.After(altsvcHeader, protocol+"=\""), "\"")
 		return true, ipPort, nil
 	}
 

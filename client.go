@@ -56,6 +56,10 @@ type Options struct {
 	Verbose bool
 	// KillIdleConn specifies if all keep-alive connections gets killed
 	KillIdleConn bool
+	// should retry on http2 if alt-svc header provided?
+	HTTP2 bool
+	// should retry on http3 if alt-svc header provided?
+	HTTP3 bool
 }
 
 // DefaultOptionsSpraying contains the default options for host spraying
@@ -67,6 +71,8 @@ var DefaultOptionsSpraying = Options{
 	RetryMax:      5,
 	RespReadLimit: 4096,
 	KillIdleConn:  true,
+	HTTP2:         false,
+	HTTP3:         false,
 }
 
 // DefaultOptionsSingle contains the default options for host bruteforce
@@ -78,6 +84,8 @@ var DefaultOptionsSingle = Options{
 	RetryMax:      5,
 	RespReadLimit: 4096,
 	KillIdleConn:  false,
+	HTTP2:         false,
+	HTTP3:         false,
 }
 
 // NewClient creates a new Client with default settings.
@@ -92,7 +100,7 @@ func NewClient(options Options) *Client {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
-		QuicConfig: &quic.Config,
+		QuicConfig: &quic.Config{},
 	}
 	http3client.Transport = h3Transport
 
@@ -126,7 +134,7 @@ func NewWithHTTPClient(client *http.Client, options Options) *Client {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
-		QuicConfig: &quic.Config,
+		QuicConfig: &quic.Config{},
 	}
 	http3client.Transport = h3Transport
 	c := &Client{

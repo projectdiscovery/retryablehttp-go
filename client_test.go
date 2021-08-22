@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectdiscovery/retryablehttp-go/buggyhttp"
+	"github.com/projectdiscovery/retryablehttp-go/tests/buggyhttp"
 )
 
 // TestRequest parsing methodology

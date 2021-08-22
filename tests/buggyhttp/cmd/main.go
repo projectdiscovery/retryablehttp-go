@@ -6,14 +6,13 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/projectdiscovery/retryablehttp-go/buggyhttp"
+	"github.com/projectdiscovery/retryablehttp-go/tests/buggyhttp"
 )
 
 func WaitForCtrlC() {
 	var endwaiter sync.WaitGroup
 	endwaiter.Add(1)
-	var signalchannel chan os.Signal
-	signalchannel = make(chan os.Signal, 1)
+	signalchannel := make(chan os.Signal, 1)
 	signal.Notify(signalchannel, os.Interrupt)
 	go func() {
 		<-signalchannel

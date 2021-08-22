@@ -56,13 +56,23 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
 		}
 
-		// As a last effort checks if the server advertised to use HTTP3
-		if ok, h3ipport, err := HasHTTP3(resp); ok && err == nil {
-			// TODO: here we should make the h3 client dial the udp ip:port advertised by the server in order to
-			// complete the TLS 1.3 handshake
-			_ = h3ipport
-			resp, err = c.HTTPClient3.Do(req.Request)
-			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
+		// Check if the server instructed to retry on an alternate URL via alt-svc - always executes if the options are enabled with http2 priority
+		// over http3
+		if c.options.HTTP2 { //checks if the server advertised to use HTTP2
+			if ok, h2ipport, err := HasHTTP2(resp); ok && err == nil {
+				// here we should make the h3 client dial the udp ip:port advertised by the server
+				req.Request.URL.Host = h2ipport
+				resp, err = c.HTTPClient2.Do(req.Request)
+				checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
+			}
+		} else if c.options.HTTP3 { //checks if the server advertised to use HTTP3
+			if ok, h3ipport, err := HasHTTP3(resp); ok && err == nil {
+				// here we should make the h3 client dial the udp ip:port advertised by the server in order to
+				// complete the TLS 1.3 handshake
+				req.Request.URL.Host = h3ipport
+				resp, err = c.HTTPClient3.Do(req.Request)
+				checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
+			}
 		}
 
 		if err != nil {
