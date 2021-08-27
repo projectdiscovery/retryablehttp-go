@@ -21,6 +21,12 @@ func TestRequest(t *testing.T) {
 		t.Fatalf("should error")
 	}
 
+	// Works with no request body
+	_, err = NewRequest("GET", "http://foo", nil)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
 	// Works with request body
 	body := bytes.NewReader([]byte("yo"))
 	req, err := NewRequest("GET", "/", body)
