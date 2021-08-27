@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -150,8 +152,16 @@ func (c *Client) drainBody(req *Request, resp *http.Response) {
 	resp.Body.Close()
 }
 
+const closeConnectionsCounter = 100
+
 func (c *Client) closeIdleConnections() {
 	if c.options.KillIdleConn {
-		c.HTTPClient.CloseIdleConnections()
+		requestCounter := atomic.LoadUint32(&c.requestCounter)
+		if requestCounter < closeConnectionsCounter {
+			atomic.AddUint32(&c.requestCounter, 1)
+		} else {
+			atomic.StoreUint32(&c.requestCounter, 0)
+			c.HTTPClient.CloseIdleConnections()
+		}
 	}
 }

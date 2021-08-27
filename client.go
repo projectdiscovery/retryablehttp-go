@@ -21,6 +21,8 @@ type Client struct {
 	// Alt-Svc: h3="ip:port"
 	HTTPClient3 *http.Client
 
+	requestCounter uint32
+
 	// RequestLogHook allows a user-supplied function to be called
 	// before each retry.
 	RequestLogHook RequestLogHook
