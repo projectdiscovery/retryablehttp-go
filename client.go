@@ -15,6 +15,8 @@ type Client struct {
 	// HTTPClient is the internal HTTP client configured to fallback to native http2 at transport level
 	HTTPClient2 *http.Client
 
+	requestCounter uint32
+
 	// RequestLogHook allows a user-supplied function to be called
 	// before each retry.
 	RequestLogHook RequestLogHook
