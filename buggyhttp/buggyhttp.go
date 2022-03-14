@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"strconv"
 	"strings"
 	"time"
@@ -68,7 +67,7 @@ func messyEncoding(w http.ResponseWriter, req *http.Request) {
 	}
 
 	for _, oneencodingfrommany := range soManyEncodings {
-		fmt.Fprintf(w, oneencodingfrommany)
+		fmt.Fprint(w, oneencodingfrommany)
 	}
 }
 
@@ -115,7 +114,7 @@ func unexpectedEOF(w http.ResponseWriter, req *http.Request) {
 	defer conn.Close()
 	// reply with bogus data - this should either crash the client or trigger a recoverable error on
 	// default retryablehttp requests
-	bufrw.WriteString("HTTP/1.1 200 OK\n" +
+	_, _ = bufrw.WriteString("HTTP/1.1 200 OK\n" +
 		"Date: Mon, 27 Jul 2009 12:28:53 GMT\n" +
 		"Server:\n")
 	// "Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT" +
@@ -123,7 +122,6 @@ func unexpectedEOF(w http.ResponseWriter, req *http.Request) {
 	// "Content-Type: whatzdacontenttype" +
 	// "Connection: drunk")
 	bufrw.Flush()
-	return
 }
 
 // Simulate normal 200 answer with body
@@ -148,7 +146,7 @@ func successAfter(w http.ResponseWriter, req *http.Request) {
 		defer conn.Close()
 		// reply with bogus data - this should either crash the client or trigger a recoverable error on
 		// default retryablehttp requests
-		bufrw.WriteString("HHHTTP\\1,.1 -500 MAYBEOK\n" +
+		_, _ = bufrw.WriteString("HHHTTP\\1,.1 -500 MAYBEOK\n" +
 			"Date: Mon, 27 Jul 2009 12:28:53 GMT\n" +
 			"Server: Apache/2.2.14 (Win32)\n" +
 			"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n" +
@@ -164,14 +162,7 @@ func successAfter(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "foo")
 }
 
-func echo(w http.ResponseWriter, req *http.Request) {
-	var formatted, err = httputil.DumpRequest(req, true)
-	if err != nil {
-		fmt.Fprint(w, err)
-	}
 
-	w.Write(formatted)
-}
 
 var (
 	server    *http.Server
@@ -198,7 +189,7 @@ func Listen(port int) {
 		Handler: mux,
 	}
 
-	go server.ListenAndServe()
+	go server.ListenAndServe() //nolint
 }
 
 // ListenTLS because buggyhttp also supports bugged TLS
@@ -208,7 +199,7 @@ func ListenTLS(port int, certFile, keyFile string) {
 		Handler: newMux(),
 	}
 
-	go serverTLS.ListenAndServeTLS(certFile, keyFile)
+	go serverTLS.ListenAndServeTLS(certFile, keyFile) //nolint
 }
 
 func newMux() *http.ServeMux {
@@ -228,9 +219,9 @@ func newMux() *http.ServeMux {
 // Stop the server
 func Stop() {
 	if server != nil {
-		server.Shutdown(context.Background())
+		_ = server.Shutdown(context.Background())
 	}
 	if serverTLS != nil {
-		serverTLS.Shutdown(context.Background())
+		_ = serverTLS.Shutdown(context.Background())
 	}
 }

@@ -168,19 +168,22 @@ func testClientSuccess_Do(t *testing.T, body interface{}) {
 
 	// Send the request
 	doneCh := make(chan struct{})
-	go func() {
+	errCh := make(chan error, 1)
+	fn := func() {
 		defer close(doneCh)
 		_, err := client.Do(req)
 		if err != nil {
-			t.Fatalf("err: %v", err)
+			errCh <- err
 		}
-	}()
-
+	}
+	go fn()
 	select {
 	case <-doneCh:
 		// client should have completed
 	case <-time.After(200 * time.Millisecond):
 		t.Fatalf("successful request should have been completed")
+	case error := <-errCh:
+		t.Fatalf("err: %v", error)
 	}
 
 	expected := 0
