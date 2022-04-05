@@ -31,6 +31,8 @@ type Request struct {
 
 	// Metrics contains the metrics for the request.
 	Metrics Metrics
+
+	Auth *Auth
 }
 
 // Metrics contains the metrics about each request
@@ -42,6 +44,19 @@ type Metrics struct {
 	// DrainErrors is number of errors occured in draining response body
 	DrainErrors int
 }
+
+// Auth specific information
+type Auth struct {
+	Type     AuthType
+	Username string
+	Password string
+}
+
+type AuthType uint8
+
+const (
+	DigestAuth AuthType = iota
+)
 
 // RequestLogHook allows a function to run before each retry. The HTTP
 // request which will be made, and the retry number (0 for the initial
@@ -78,7 +93,7 @@ func NewRequest(method, url string, body interface{}) (*Request, error) {
 	}
 	httpReq.ContentLength = contentLength
 
-	return &Request{bodyReader, httpReq, Metrics{}}, nil
+	return &Request{bodyReader, httpReq, Metrics{}, nil}, nil
 }
 
 // NewRequestWithContext creates a new wrapped request with context
@@ -94,7 +109,7 @@ func NewRequestWithContext(ctx context.Context, method, url string, body interfa
 	}
 	httpReq.ContentLength = contentLength
 
-	return &Request{bodyReader, httpReq, Metrics{}}, nil
+	return &Request{bodyReader, httpReq, Metrics{}, nil}, nil
 }
 
 // WithContext returns wrapped Request with a shallow copy of underlying *http.Request
@@ -112,7 +127,7 @@ func FromRequest(r *http.Request) (*Request, error) {
 	}
 	r.ContentLength = contentLength
 
-	return &Request{bodyReader, r, Metrics{}}, nil
+	return &Request{bodyReader, r, Metrics{}, nil}, nil
 }
 
 // FromRequestWithTrace wraps an http.Request in a retryablehttp.Request with trace enabled
@@ -256,4 +271,8 @@ func getBodyReaderAndContentLength(rawBody interface{}) (ReaderFunc, int64, erro
 		}
 	}
 	return bodyReader, contentLength, nil
+}
+
+func (request *Request) hasAuth() bool {
+	return request.Auth != nil
 }

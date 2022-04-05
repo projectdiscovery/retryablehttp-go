@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	dac "github.com/xinsnake/go-http-digest-auth-client"
 )
 
 // PassthroughErrorHandler is an ErrorHandler that directly passes through the
@@ -46,8 +48,14 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 			c.RequestLogHook(req.Request, i)
 		}
 
-		// Attempt the request
-		resp, err = c.HTTPClient.Do(req.Request)
+		if req.hasAuth() && req.Auth.Type == DigestAuth {
+			digestTransport := dac.NewTransport(req.Auth.Username, req.Auth.Password)
+			digestTransport.HTTPClient = c.HTTPClient
+			resp, err = digestTransport.RoundTrip(req.Request)
+		} else {
+			// Attempt the request with standard behavior
+			resp, err = c.HTTPClient.Do(req.Request)
+		}
 
 		// Check if we should continue with retries.
 		checkOK, checkErr := c.CheckRetry(req.Context(), resp, err)
