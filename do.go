@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	dac "github.com/xinsnake/go-http-digest-auth-client"
+	dac "github.com/Mzack9999/go-http-digest-auth-client"
 )
 
 // PassthroughErrorHandler is an ErrorHandler that directly passes through the
