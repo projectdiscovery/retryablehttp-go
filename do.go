@@ -27,6 +27,13 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 	mainCtx, cancel := context.WithTimeout(context.Background(), c.options.Timeout)
 	defer cancel()
 
+	retryMax := c.options.RetryMax
+	if ctxRetryMax := req.Context().Value(RETRY_MAX); ctxRetryMax != nil {
+		if maxRetriesParsed, ok := ctxRetryMax.(int); ok {
+			retryMax = maxRetriesParsed
+		}
+	}
+
 	for i := 0; ; i++ {
 		// Always rewind the request body when non-nil.
 		if req.body != nil {
@@ -81,7 +88,7 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 
 		// We do this before drainBody beause there's no need for the I/O if
 		// we're breaking out
-		remain := c.options.RetryMax - i
+		remain := retryMax - i
 		if remain <= 0 {
 			break
 		}
@@ -112,7 +119,7 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 
 	if c.ErrorHandler != nil {
 		c.closeIdleConnections()
-		return c.ErrorHandler(resp, err, c.options.RetryMax+1)
+		return c.ErrorHandler(resp, err, retryMax+1)
 	}
 
 	// By default, we close the response body and return an error without
@@ -121,7 +128,7 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 		resp.Body.Close()
 	}
 	c.closeIdleConnections()
-	return nil, fmt.Errorf("%s %s giving up after %d attempts: %w", req.Method, req.URL, c.options.RetryMax+1, err)
+	return nil, fmt.Errorf("%s %s giving up after %d attempts: %w", req.Method, req.URL, retryMax+1, err)
 }
 
 // Try to read the response body so we can reuse this connection.
