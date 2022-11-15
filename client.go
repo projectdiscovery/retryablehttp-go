@@ -76,12 +76,37 @@ var DefaultOptionsSingle = Options{
 	KillIdleConn:  false,
 }
 
-// NewClient creates a new Client with default settings.
-func NewClient(options Options) *Client {
+// Caller can invoke this and pass the retryPolicy and backoff.
+// The function takes variadic arguments with retryPolicy and backoff.
+// Anything passed outside, will still return a default setting.
+func CreateClient(options Options, arguments ...interface{}) *Client {
 	httpclient := DefaultClient()
 	httpclient2 := DefaultClient()
 	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
 		return nil
+	}
+
+	var retryPolicy CheckRetry
+	var backoff Backoff
+
+	for _, arg := range arguments {
+		switch v := arg.(type) {
+		case CheckRetry:
+			retryPolicy = v
+		case Backoff:
+			backoff = v
+		default:
+			break
+		}
+	}
+
+	// In any case no policy or backoff found set the default config.
+	if retryPolicy == nil {
+		retryPolicy = DefaultRetryPolicy()
+	}
+
+	if backoff == nil {
+		backoff = DefaultBackoff()
 	}
 
 	// if necessary adjusts per-request timeout proportionally to general timeout (30%)
@@ -92,8 +117,8 @@ func NewClient(options Options) *Client {
 	c := &Client{
 		HTTPClient:  httpclient,
 		HTTPClient2: httpclient2,
-		CheckRetry:  DefaultRetryPolicy(),
-		Backoff:     DefaultBackoff(),
+		CheckRetry:  retryPolicy,
+		Backoff:     backoff,
 		options:     options,
 	}
 
@@ -101,24 +126,14 @@ func NewClient(options Options) *Client {
 	return c
 }
 
+// NewClient creates a new Client with default settings.
+func NewClient(options Options) *Client {
+	return CreateClient(options, DefaultRetryPolicy(), DefaultBackoff())
+}
+
 // NewWithHTTPClient creates a new Client with default settings and provided http.Client
 func NewWithHTTPClient(client *http.Client, options Options) *Client {
-	httpclient2 := DefaultClient()
-	httpclient2.Transport = client.Transport.(*http.Transport).Clone()
-	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
-		return nil
-	}
-	c := &Client{
-		HTTPClient:  client,
-		HTTPClient2: httpclient2,
-		CheckRetry:  DefaultRetryPolicy(),
-		Backoff:     DefaultBackoff(),
-
-		options: options,
-	}
-
-	c.setKillIdleConnections()
-	return c
+	return CreateClient(options, DefaultRetryPolicy(), DefaultBackoff())
 }
 
 // setKillIdleConnections sets the kill idle conns switch in two scenarios
