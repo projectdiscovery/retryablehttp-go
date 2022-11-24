@@ -129,7 +129,6 @@ func TestClient_Do(t *testing.T) {
 
 // Request to /foo => 200 + valid body
 func testClientSuccess_Do(t *testing.T, body interface{}) {
-
 	// start buggyhttp
 	buggyhttp.Listen(8080)
 	defer buggyhttp.Stop()
@@ -180,7 +179,7 @@ func testClientSuccess_Do(t *testing.T, body interface{}) {
 	select {
 	case <-doneCh:
 		// client should have completed
-	case <-time.After(200 * time.Millisecond):
+	case <-time.After(time.Second):
 		t.Fatalf("successful request should have been completed")
 	case error := <-errCh:
 		t.Fatalf("err: %v", error)
@@ -196,7 +195,6 @@ func testClientSuccess_Do(t *testing.T, body interface{}) {
 // Expected: Some recoverable network failures and after 5 retries the library should be able to get Status Code 200 + Valid Body with various backoff stategies
 // Request to /successafter => 5 attempts recoverable + at 6th attempt 200 + valid body
 func TestClientRetry_Do(t *testing.T) {
-
 	// start buggyhttp
 	buggyhttp.Listen(8080)
 	defer buggyhttp.Stop()
@@ -227,7 +225,6 @@ func TestClientRetry_Do(t *testing.T) {
 // TestClientEmptyResponse_Do tests a generic endpoint that simulates the server hanging connection immediately (http connection closed by peer)
 // Expected: The library should keep on retrying until the final timeout or maximum retries amount
 func TestClientEmptyResponse_Do(t *testing.T) {
-
 	// start buggyhttp
 	buggyhttp.Listen(8080)
 	defer buggyhttp.Stop()
@@ -256,7 +253,6 @@ func TestClientEmptyResponse_Do(t *testing.T) {
 // TestClientUnexpectedEOF_Do tests a generic endpoint that simulates the server hanging the connection in the middle of a valid response (connection failure)
 // Expected: The library should keep on retrying until the final timeout or maximum retries amount
 func TestClientUnexpectedEOF_Do(t *testing.T) {
-
 	// start buggyhttp
 	buggyhttp.Listen(8080)
 	defer buggyhttp.Stop()
@@ -285,7 +281,6 @@ func TestClientUnexpectedEOF_Do(t *testing.T) {
 // TestClientEndlessBody_Do tests a generic endpoint that simulates the server delivering an infinite content body
 // Expected: The library should read until a certain limit with return code 200
 func TestClientEndlessBody_Do(t *testing.T) {
-
 	// start buggyhttp
 	buggyhttp.Listen(8080)
 	defer buggyhttp.Stop()
@@ -319,7 +314,6 @@ func TestClientEndlessBody_Do(t *testing.T) {
 // TestClientMessyHeaders_Do tests a generic endpoint that simulates the server sending infinite headers
 // Expected: The library should stop reading headers after a certain amount or go into timeout
 func TestClientMessyHeaders_Do(t *testing.T) {
-
 	// start buggyhttp
 	buggyhttp.Listen(8080)
 	defer buggyhttp.Stop()
@@ -352,7 +346,6 @@ func TestClientMessyHeaders_Do(t *testing.T) {
 // TestClientMessyEncoding_Do tests a generic endpoint that simulates the server sending weird encodings in headers
 // Expected: The library should be successful as all strings are treated as runes
 func TestClientMessyEncoding_Do(t *testing.T) {
-
 	// start buggyhttp
 	buggyhttp.Listen(8080)
 	defer buggyhttp.Stop()

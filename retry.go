@@ -34,7 +34,7 @@ type CheckRetry func(ctx context.Context, resp *http.Response, err error) (bool,
 // will retry on connection errors and server errors.
 func DefaultRetryPolicy() func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	return func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		return checkErrors(ctx, resp, err)
+		return CheckRecoverableErrors(ctx, resp, err)
 	}
 }
 
@@ -42,11 +42,12 @@ func DefaultRetryPolicy() func(ctx context.Context, resp *http.Response, err err
 // will retry on connection errors and server errors.
 func HostSprayRetryPolicy() func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	return func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		return checkErrors(ctx, resp, err)
+		return CheckRecoverableErrors(ctx, resp, err)
 	}
 }
 
-func checkErrors(ctx context.Context, resp *http.Response, err error) (bool, error) {
+// Check recoverable errors
+func CheckRecoverableErrors(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	// do not retry on context.Canceled or context.DeadlineExceeded
 	if ctx.Err() != nil {
 		return false, ctx.Err()
@@ -69,7 +70,6 @@ func checkErrors(ctx context.Context, resp *http.Response, err error) (bool, err
 				return false, nil
 			}
 		}
-
 		// The error is likely recoverable so retry.
 		return true, nil
 	}
