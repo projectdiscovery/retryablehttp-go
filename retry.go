@@ -3,7 +3,6 @@ package retryablehttp
 import (
 	"context"
 	"crypto/x509"
-	"errors"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -35,17 +34,7 @@ type CheckRetry func(ctx context.Context, resp *http.Response, err error) (bool,
 // will retry on connection errors and server errors.
 func DefaultRetryPolicy() func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	return func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		return checkErrors(ctx, resp, err)
-	}
-}
-
-// HTTPErrorRetryPolicy is to retry for HTTPCodes >= 500.
-func HTTPErrorRetryPolicy() func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-	return func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		if resp.StatusCode >= 500 {
-			return true, errors.New(resp.Status)
-		}
-		return checkErrors(ctx, resp, err)
+		return CheckRecoverableErrors(ctx, resp, err)
 	}
 }
 
@@ -53,11 +42,12 @@ func HTTPErrorRetryPolicy() func(ctx context.Context, resp *http.Response, err e
 // will retry on connection errors and server errors.
 func HostSprayRetryPolicy() func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	return func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		return checkErrors(ctx, resp, err)
+		return CheckRecoverableErrors(ctx, resp, err)
 	}
 }
 
-func checkErrors(ctx context.Context, resp *http.Response, err error) (bool, error) {
+// Check recoverable errors
+func CheckRecoverableErrors(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	// do not retry on context.Canceled or context.DeadlineExceeded
 	if ctx.Err() != nil {
 		return false, ctx.Err()
@@ -80,7 +70,6 @@ func checkErrors(ctx context.Context, resp *http.Response, err error) (bool, err
 				return false, nil
 			}
 		}
-
 		// The error is likely recoverable so retry.
 		return true, nil
 	}

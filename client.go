@@ -52,6 +52,12 @@ type Options struct {
 	Verbose bool
 	// KillIdleConn specifies if all keep-alive connections gets killed
 	KillIdleConn bool
+	// Custom CheckRetry policy
+	CheckRetry CheckRetry
+	// Custom Backoff policy
+	Backoff Backoff
+	// Custom http client
+	HttpClient *http.Client
 }
 
 // DefaultOptionsSpraying contains the default options for host spraying
@@ -76,11 +82,15 @@ var DefaultOptionsSingle = Options{
 	KillIdleConn:  false,
 }
 
-// Caller can invoke this and pass the retryPolicy and backoff.
-// The function takes variadic arguments with retryPolicy and backoff.
-// Anything passed outside, will still return a default setting.
-func CreateClient(options Options, arguments ...interface{}) *Client {
-	httpclient := DefaultClient()
+// NewClient creates a new Client with default settings.
+func NewClient(options Options) *Client {
+	var httpclient *http.Client
+	if options.HttpClient != nil {
+		httpclient = options.HttpClient
+	} else {
+		httpclient = DefaultClient()
+	}
+
 	httpclient2 := DefaultClient()
 	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
 		return nil
@@ -89,24 +99,14 @@ func CreateClient(options Options, arguments ...interface{}) *Client {
 	var retryPolicy CheckRetry
 	var backoff Backoff
 
-	for _, arg := range arguments {
-		switch v := arg.(type) {
-		case CheckRetry:
-			retryPolicy = v
-		case Backoff:
-			backoff = v
-		default:
-			break
-		}
+	retryPolicy = DefaultRetryPolicy()
+	if options.CheckRetry != nil {
+		retryPolicy = options.CheckRetry
 	}
 
-	// In any case no policy or backoff found set the default config.
-	if retryPolicy == nil {
-		retryPolicy = DefaultRetryPolicy()
-	}
-
-	if backoff == nil {
-		backoff = DefaultBackoff()
+	backoff = DefaultBackoff()
+	if options.Backoff != nil {
+		backoff = options.Backoff
 	}
 
 	// if necessary adjusts per-request timeout proportionally to general timeout (30%)
@@ -126,14 +126,11 @@ func CreateClient(options Options, arguments ...interface{}) *Client {
 	return c
 }
 
-// NewClient creates a new Client with default settings.
-func NewClient(options Options) *Client {
-	return CreateClient(options, DefaultRetryPolicy(), DefaultBackoff())
-}
-
-// NewWithHTTPClient creates a new Client with default settings and provided http.Client
+// NewWithHTTPClient creates a new Client with custom http client
+// Deprecated: Use options.HttpClient
 func NewWithHTTPClient(client *http.Client, options Options) *Client {
-	return CreateClient(options, DefaultRetryPolicy(), DefaultBackoff())
+	options.HttpClient = client
+	return NewClient(options)
 }
 
 // setKillIdleConnections sets the kill idle conns switch in two scenarios
