@@ -122,11 +122,13 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 
 // FromRequest wraps an http.Request in a retryablehttp.Request
 func FromRequest(r *http.Request) (*Request, error) {
-	body, err := fileutil.NewReusableReader(r.Body)
-	if err != nil {
-		return nil, err
+	if r.Body != nil {
+		body, err := fileutil.NewReusableReader(r.Body)
+		if err != nil {
+			return nil, err
+		}
+		r.Body = body
 	}
-	r.Body = body
 	bodyReader, contentLength, err := getBodyReaderAndContentLength(r.Body)
 	if err != nil {
 		return nil, err
