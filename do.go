@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -47,7 +46,7 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 			if c, ok := body.(io.ReadCloser); ok {
 				req.Body = c
 			} else {
-				req.Body = ioutil.NopCloser(body)
+				req.Body = io.NopCloser(body)
 			}
 		}
 
@@ -141,7 +140,7 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 
 // Try to read the response body so we can reuse this connection.
 func (c *Client) drainBody(req *Request, resp *http.Response) {
-	_, err := io.Copy(ioutil.Discard, io.LimitReader(resp.Body, c.options.RespReadLimit))
+	_, err := io.Copy(io.Discard, io.LimitReader(resp.Body, c.options.RespReadLimit))
 	if err != nil {
 		req.Metrics.DrainErrors++
 	}

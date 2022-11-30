@@ -5,10 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptrace"
 	"os"
+
+	fileutil "github.com/projectdiscovery/utils/file"
 )
 
 // LenReader is an interface implemented by many in-memory io.Reader's. Used
@@ -121,6 +122,11 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 
 // FromRequest wraps an http.Request in a retryablehttp.Request
 func FromRequest(r *http.Request) (*Request, error) {
+	body, err := fileutil.NewReusableReader(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	r.Body = body
 	bodyReader, contentLength, err := getBodyReaderAndContentLength(r.Body)
 	if err != nil {
 		return nil, err
@@ -235,7 +241,7 @@ func getBodyReaderAndContentLength(rawBody interface{}) (ReaderFunc, int64, erro
 		// deal with it seeking so want it to match here instead of the
 		// io.ReadSeeker case.
 		case *bytes.Reader:
-			buf, err := ioutil.ReadAll(body)
+			buf, err := io.ReadAll(body)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -249,7 +255,7 @@ func getBodyReaderAndContentLength(rawBody interface{}) (ReaderFunc, int64, erro
 			raw := body
 			bodyReader = func() (io.Reader, error) {
 				_, err := raw.Seek(0, 0)
-				return ioutil.NopCloser(raw), err
+				return io.NopCloser(raw), err
 			}
 			if lr, ok := raw.(LenReader); ok {
 				contentLength = int64(lr.Len())
@@ -257,7 +263,7 @@ func getBodyReaderAndContentLength(rawBody interface{}) (ReaderFunc, int64, erro
 
 		// Read all in so we can reset
 		case io.Reader:
-			buf, err := ioutil.ReadAll(body)
+			buf, err := io.ReadAll(body)
 			if err != nil {
 				return nil, 0, err
 			}
