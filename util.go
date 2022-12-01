@@ -19,3 +19,9 @@ func Discard(req *Request, resp *http.Response, RespReadLimit int64) {
 	}
 	resp.Body.Close()
 }
+
+// getLength returns length of a Reader efficiently
+func getLength(x io.Reader) (int64, error) {
+	len, err := io.Copy(io.Discard, x)
+	return len, err
+}

@@ -46,6 +46,28 @@ func TestRequest(t *testing.T) {
 	}
 }
 
+// TestRequestBody reads request body multiple times
+// using httputil.DumpRequestOut
+func TestRequestBody(t *testing.T) {
+	body := bytes.NewReader([]byte("yo"))
+	req, err := NewRequest("GET", "https://projectdiscovery.io", body)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	for i := 0; i < 10; i++ {
+		bin, err := httputil.DumpRequestOut(req.Request, true)
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+
+		if bytes.Equal([]byte("yo"), bin) {
+			t.Errorf("expected %v but got %v", "yo", string(bin))
+		}
+	}
+
+}
+
 // TestFromRequest cloning from an existing request
 func TestFromRequest(t *testing.T) {
 	// Works with no request body
@@ -108,9 +130,7 @@ func (c *custReader) Read(p []byte) (n int, err error) {
 func TestClient_Do(t *testing.T) {
 	testBytes := []byte("hello")
 	// Native func
-	testClientSuccess_Do(t, ReaderFunc(func() (io.Reader, error) {
-		return bytes.NewReader(testBytes), nil
-	}))
+	testClientSuccess_Do(t, testBytes)
 	// Native func, different Go type
 	testClientSuccess_Do(t, func() (io.Reader, error) {
 		return bytes.NewReader(testBytes), nil
@@ -156,7 +176,7 @@ func testClientSuccess_Do(t *testing.T, body interface{}) {
 
 		dumpBytes, err := httputil.DumpRequestOut(req, false)
 		if err != nil {
-			t.Fatal("Dumping requests failed")
+			t.Fatalf("Dumping requests failed %v", err)
 		}
 
 		dumpString := string(dumpBytes)
@@ -219,6 +239,45 @@ func TestClientRetry_Do(t *testing.T) {
 	if err != nil {
 		// if at the end we get a failure then it's unexpected behavior
 		t.Fatalf("err: %v", err)
+	}
+
+	// Validate Metrics
+	if req.Metrics.Retries != expectedRetries {
+		t.Fatalf("err: retries do not match expected %v but got %v", expectedRetries, req.Metrics.Retries)
+	}
+}
+
+// TestClientRetryWithBody_Do does same as TestClientRetry_Do but with request body and 5 retries
+func TestClientRetryWithBody_Do(t *testing.T) {
+	// start buggyhttp
+	buggyhttp.Listen(8080)
+	defer buggyhttp.Stop()
+
+	expectedRetries := 5
+	// Create a generic request towards /successAfter passing the number of times before the same request is successful
+	req, err := NewRequest("GET", fmt.Sprintf("http://127.0.0.1:8080/successAfter?successAfter=%d", expectedRetries), "request with body")
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	var options Options
+	options.RetryWaitMin = 10 * time.Millisecond
+	options.RetryWaitMax = 50 * time.Millisecond
+	options.RetryMax = 6
+
+	// Create the client. Use short retry windows.
+	client := NewClient(options)
+
+	// In this point the retry strategy should kick in until a response is succesful
+	_, err = client.Do(req)
+	if err != nil {
+		// if at the end we get a failure then it's unexpected behavior
+		t.Fatalf("err: %v", err)
+	}
+
+	// Validate Metrics
+	if req.Metrics.Retries != expectedRetries {
+		t.Fatalf("err: retries do not match expected %v but got %v", expectedRetries, req.Metrics.Retries)
 	}
 }
 
