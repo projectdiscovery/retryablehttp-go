@@ -149,10 +149,6 @@ func TestClient_Do(t *testing.T) {
 
 // Request to /foo => 200 + valid body
 func testClientSuccess_Do(t *testing.T, body interface{}) {
-	// start buggyhttp
-	buggyhttp.Listen(8080)
-	defer buggyhttp.Stop()
-
 	// Create a request
 	req, err := NewRequest("GET", "http://127.0.0.1:8080/foo", body)
 	if err != nil {
@@ -215,10 +211,6 @@ func testClientSuccess_Do(t *testing.T, body interface{}) {
 // Expected: Some recoverable network failures and after 5 retries the library should be able to get Status Code 200 + Valid Body with various backoff stategies
 // Request to /successafter => 5 attempts recoverable + at 6th attempt 200 + valid body
 func TestClientRetry_Do(t *testing.T) {
-	// start buggyhttp
-	buggyhttp.Listen(8080)
-	defer buggyhttp.Stop()
-
 	expectedRetries := 3
 	// Create a generic request towards /successAfter passing the number of times before the same request is successful
 	req, err := NewRequest("GET", fmt.Sprintf("http://127.0.0.1:8080/successAfter?successAfter=%d", expectedRetries), nil)
@@ -249,10 +241,6 @@ func TestClientRetry_Do(t *testing.T) {
 
 // TestClientRetryWithBody_Do does same as TestClientRetry_Do but with request body and 5 retries
 func TestClientRetryWithBody_Do(t *testing.T) {
-	// start buggyhttp
-	buggyhttp.Listen(8080)
-	defer buggyhttp.Stop()
-
 	expectedRetries := 5
 	// Create a generic request towards /successAfter passing the number of times before the same request is successful
 	req, err := NewRequest("GET", fmt.Sprintf("http://127.0.0.1:8080/successAfter?successAfter=%d", expectedRetries), "request with body")
@@ -284,10 +272,6 @@ func TestClientRetryWithBody_Do(t *testing.T) {
 // TestClientEmptyResponse_Do tests a generic endpoint that simulates the server hanging connection immediately (http connection closed by peer)
 // Expected: The library should keep on retrying until the final timeout or maximum retries amount
 func TestClientEmptyResponse_Do(t *testing.T) {
-	// start buggyhttp
-	buggyhttp.Listen(8080)
-	defer buggyhttp.Stop()
-
 	// Create a request
 	req, err := NewRequest("GET", "http://127.0.0.1:8080/emptyResponse", nil)
 	if err != nil {
@@ -312,10 +296,6 @@ func TestClientEmptyResponse_Do(t *testing.T) {
 // TestClientUnexpectedEOF_Do tests a generic endpoint that simulates the server hanging the connection in the middle of a valid response (connection failure)
 // Expected: The library should keep on retrying until the final timeout or maximum retries amount
 func TestClientUnexpectedEOF_Do(t *testing.T) {
-	// start buggyhttp
-	buggyhttp.Listen(8080)
-	defer buggyhttp.Stop()
-
 	// Create a request
 	req, err := NewRequest("GET", "http://127.0.0.1:8080/unexpectedEOF", nil)
 	if err != nil {
@@ -340,10 +320,6 @@ func TestClientUnexpectedEOF_Do(t *testing.T) {
 // TestClientEndlessBody_Do tests a generic endpoint that simulates the server delivering an infinite content body
 // Expected: The library should read until a certain limit with return code 200
 func TestClientEndlessBody_Do(t *testing.T) {
-	// start buggyhttp
-	buggyhttp.Listen(8080)
-	defer buggyhttp.Stop()
-
 	// Create a request
 	req, err := NewRequest("GET", "http://127.0.0.1:8080/endlessBody", nil)
 	if err != nil {
@@ -373,10 +349,6 @@ func TestClientEndlessBody_Do(t *testing.T) {
 // TestClientMessyHeaders_Do tests a generic endpoint that simulates the server sending infinite headers
 // Expected: The library should stop reading headers after a certain amount or go into timeout
 func TestClientMessyHeaders_Do(t *testing.T) {
-	// start buggyhttp
-	buggyhttp.Listen(8080)
-	defer buggyhttp.Stop()
-
 	// Create a request
 	req, err := NewRequest("GET", "http://127.0.0.1:8080/messyHeaders", nil)
 	if err != nil {
@@ -405,10 +377,6 @@ func TestClientMessyHeaders_Do(t *testing.T) {
 // TestClientMessyEncoding_Do tests a generic endpoint that simulates the server sending weird encodings in headers
 // Expected: The library should be successful as all strings are treated as runes
 func TestClientMessyEncoding_Do(t *testing.T) {
-	// start buggyhttp
-	buggyhttp.Listen(8080)
-	defer buggyhttp.Stop()
-
 	// Create a request
 	req, err := NewRequest("GET", "http://127.0.0.1:8080/messyEncoding", nil)
 	if err != nil {
@@ -432,4 +400,11 @@ func TestClientMessyEncoding_Do(t *testing.T) {
 
 	// Arguably now it's up to the caller to handle the response body
 	Discard(req, resp, options.RespReadLimit)
+}
+
+func TestMain(m *testing.M) {
+	// start buggyhttp
+	buggyhttp.Listen(8080)
+	defer buggyhttp.Stop()
+	m.Run()
 }
