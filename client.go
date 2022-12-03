@@ -56,6 +56,8 @@ type Options struct {
 	CheckRetry CheckRetry
 	// Custom Backoff policy
 	Backoff Backoff
+	// NoAdjustTimeout disables automatic adjustment of HTTP request timeout
+	NoAdjustTimeout bool
 	// Custom http client
 	HttpClient *http.Client
 }
@@ -110,7 +112,7 @@ func NewClient(options Options) *Client {
 	}
 
 	// if necessary adjusts per-request timeout proportionally to general timeout (30%)
-	if options.Timeout > time.Second*15 {
+	if options.Timeout > time.Second*15 && options.RetryMax > 1 && !options.NoAdjustTimeout {
 		httpclient.Timeout = time.Duration(options.Timeout.Seconds()*0.3) * time.Second
 	}
 
