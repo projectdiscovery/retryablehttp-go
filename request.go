@@ -7,11 +7,15 @@ import (
 	"net/http"
 	"net/http/httptrace"
 	"net/http/httputil"
+	"net/url"
 	"os"
 
 	readerutil "github.com/projectdiscovery/utils/reader"
 	urlutil "github.com/projectdiscovery/utils/url"
 )
+
+// When True . Request uses `http` as scheme instead of `https`
+var PreferHTTP bool
 
 // Request wraps the metadata needed to create HTTP requests.
 // Request is not threadsafe. A request cannot be used by multiple goroutines
@@ -100,6 +104,14 @@ func (r *Request) BodyBytes() ([]byte, error) {
 // Update request URL with new changes of parameters if any
 func (r *Request) Update() {
 	r.URL.Update()
+	updateScheme(r.URL.URL)
+}
+
+// SetURL updates request url (i.e http.Request.URL) with given url
+func (r *Request) SetURL(u *urlutil.URL) {
+	r.URL = u
+	r.Request.URL = u.URL
+	r.Update()
 }
 
 // Clones and returns new Request
@@ -218,6 +230,7 @@ func NewRequest(method, url string, body interface{}) (*Request, error) {
 		return nil, err
 	}
 	httpReq.URL = urlx.URL
+	updateScheme(httpReq.URL)
 
 	// content-length and body should be assigned only
 	// if request has body
@@ -245,6 +258,7 @@ func NewRequestWithContext(ctx context.Context, method, url string, body interfa
 		return nil, err
 	}
 	httpReq.URL = urlx.URL
+	updateScheme(httpReq.URL)
 	// content-length and body should be assigned only
 	// if request has body
 	if bodyReader != nil {
@@ -253,4 +267,21 @@ func NewRequestWithContext(ctx context.Context, method, url string, body interfa
 	}
 
 	return &Request{httpReq, urlx, Metrics{}, nil}, nil
+}
+
+func updateScheme(u *url.URL) {
+	// when url without scheme is passed to url.URL it loosely parses and ususally actual host is either part of scheme or path
+	// But this is sometimes handled internally when creating request using http.NewRequest
+	// Also It is illegal to update http.Request.URL in serverHTTP https://github.com/golang/go/issues/18952 but no mention about client side
+
+	// When Url of Request is updated (i.e http.Request.URL = tmp etc) this condition must be explicitly handled else
+	// it causes `unsupported protocol scheme "" error `
+
+	if u.Host != "" && u.Scheme == "" {
+		if PreferHTTP {
+			u.Scheme = "http"
+		} else {
+			u.Scheme = "https"
+		}
+	}
 }
