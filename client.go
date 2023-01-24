@@ -114,8 +114,10 @@ func NewClient(options Options) *Client {
 	}
 
 	// add timeout to clients
-	httpclient.Timeout = options.Timeout
-	httpclient2.Timeout = options.Timeout
+	if options.Timeout > 0 {
+		httpclient.Timeout = options.Timeout
+		httpclient2.Timeout = options.Timeout
+	}
 
 	// if necessary adjusts per-request timeout proportionally to general timeout (30%)
 	if options.Timeout > time.Second*15 && options.RetryMax > 1 && !options.NoAdjustTimeout {
