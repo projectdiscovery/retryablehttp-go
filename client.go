@@ -65,23 +65,25 @@ type Options struct {
 // DefaultOptionsSpraying contains the default options for host spraying
 // scenarios where lots of requests need to be sent to different hosts.
 var DefaultOptionsSpraying = Options{
-	RetryWaitMin:  1 * time.Second,
-	RetryWaitMax:  30 * time.Second,
-	Timeout:       30 * time.Second,
-	RetryMax:      5,
-	RespReadLimit: 4096,
-	KillIdleConn:  true,
+	RetryWaitMin:    1 * time.Second,
+	RetryWaitMax:    30 * time.Second,
+	Timeout:         30 * time.Second,
+	RetryMax:        5,
+	RespReadLimit:   4096,
+	KillIdleConn:    true,
+	NoAdjustTimeout: true,
 }
 
 // DefaultOptionsSingle contains the default options for host bruteforce
 // scenarios where lots of requests need to be sent to a single host.
 var DefaultOptionsSingle = Options{
-	RetryWaitMin:  1 * time.Second,
-	RetryWaitMax:  30 * time.Second,
-	Timeout:       30 * time.Second,
-	RetryMax:      5,
-	RespReadLimit: 4096,
-	KillIdleConn:  false,
+	RetryWaitMin:    1 * time.Second,
+	RetryWaitMax:    30 * time.Second,
+	Timeout:         30 * time.Second,
+	RetryMax:        5,
+	RespReadLimit:   4096,
+	KillIdleConn:    false,
+	NoAdjustTimeout: true,
 }
 
 // NewClient creates a new Client with default settings.
@@ -109,6 +111,12 @@ func NewClient(options Options) *Client {
 	backoff = DefaultBackoff()
 	if options.Backoff != nil {
 		backoff = options.Backoff
+	}
+
+	// add timeout to clients
+	if options.Timeout > 0 {
+		httpclient.Timeout = options.Timeout
+		httpclient2.Timeout = options.Timeout
 	}
 
 	// if necessary adjusts per-request timeout proportionally to general timeout (30%)
