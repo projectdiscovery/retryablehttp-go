@@ -107,6 +107,18 @@ func (r *Request) Update() {
 	updateScheme(r.URL.URL)
 }
 
+// Prepares request (applies hot patch if any. Ex: Path Unescape to prevent double url encoding)
+// calling multiple times may have unexpected results unlike Update() method
+func (r *Request) Prepare() {
+	// hot patch to avoid url path encoding issues
+	// by default we decode encoded/escaped path and internally http.Request encodes them again
+	// this avoid double url encoding (or reencoding or path)
+	if rawPath, err := url.QueryUnescape(r.URL.Path); err == nil {
+		r.URL.Path = rawPath
+	}
+	r.Update()
+}
+
 // SetURL updates request url (i.e http.Request.URL) with given url
 func (r *Request) SetURL(u *urlutil.URL) {
 	r.URL = u
@@ -215,23 +227,29 @@ func FromRequestWithTrace(r *http.Request) (*Request, error) {
 }
 
 // NewRequest creates a new wrapped request.
-func NewRequest(method, url string, body interface{}) (*Request, error) {
+func NewRequestFromURL(method string, urlx *urlutil.URL, body interface{}) (*Request, error) {
+	return NewRequestFromURLWithContext(context.Background(), method, urlx, body)
+}
+
+// NewRequestWithContext creates a new wrapped request with context
+func NewRequestFromURLWithContext(ctx context.Context, method string, urlx *urlutil.URL, body interface{}) (*Request, error) {
 	bodyReader, contentLength, err := getReusableBodyandContentLength(body)
 	if err != nil {
 		return nil, err
 	}
 
-	urlx, err := urlutil.Parse(url)
+	// we provide a url without path to http.NewRequest at start and then replace url instance directly
+	// because `http.NewRequest()` internally parses using `url.Parse()` this removes/overrides any
+	// patches done by urlutil.URL in unsafe mode (ex: https://scanme.sh/%invalid)
+	// Note: this does not have any impact on actual path when sending request
+	// `http.NewRequestxxx` internally only uses `u.Host` and all other data is stored in `url.URL` instance
+	httpReq, err := http.NewRequestWithContext(ctx, method, "https://"+urlx.Host, nil)
 	if err != nil {
 		return nil, err
 	}
-	httpReq, err := http.NewRequest(method, url, nil)
-	if err != nil {
-		return nil, err
-	}
+	urlx.Update()
 	httpReq.URL = urlx.URL
 	updateScheme(httpReq.URL)
-
 	// content-length and body should be assigned only
 	// if request has body
 	if bodyReader != nil {
@@ -242,31 +260,22 @@ func NewRequest(method, url string, body interface{}) (*Request, error) {
 	return &Request{httpReq, urlx, Metrics{}, nil}, nil
 }
 
-// NewRequestWithContext creates a new wrapped request with context
-func NewRequestWithContext(ctx context.Context, method, url string, body interface{}) (*Request, error) {
-	bodyReader, contentLength, err := getReusableBodyandContentLength(body)
-	if err != nil {
-		return nil, err
-	}
-
+// NewRequest creates a new wrapped request
+func NewRequest(method, url string, body interface{}) (*Request, error) {
 	urlx, err := urlutil.Parse(url)
 	if err != nil {
 		return nil, err
 	}
-	httpReq, err := http.NewRequestWithContext(ctx, method, url, nil)
+	return NewRequestFromURL(method, urlx, body)
+}
+
+// NewRequest creates a new wrapped request with given context
+func NewRequestWithContext(ctx context.Context, method, url string, body interface{}) (*Request, error) {
+	urlx, err := urlutil.Parse(url)
 	if err != nil {
 		return nil, err
 	}
-	httpReq.URL = urlx.URL
-	updateScheme(httpReq.URL)
-	// content-length and body should be assigned only
-	// if request has body
-	if bodyReader != nil {
-		httpReq.ContentLength = contentLength
-		httpReq.Body = bodyReader
-	}
-
-	return &Request{httpReq, urlx, Metrics{}, nil}, nil
+	return NewRequestFromURLWithContext(ctx, method, urlx, body)
 }
 
 func updateScheme(u *url.URL) {
