@@ -238,11 +238,12 @@ func NewRequestFromURLWithContext(ctx context.Context, method string, urlx *urlu
 		return nil, err
 	}
 
-	// we provide a dummy url at start and then replace url instance directly
+	// we provide a url without path to http.NewRequest at start and then replace url instance directly
 	// because `http.NewRequest()` internally parses using `url.Parse()` this removes/overrides any
 	// patches done by urlutil.URL in unsafe mode (ex: https://scanme.sh/%invalid)
-	// Note: this does not have any impact on actual url when sending request
-	httpReq, err := http.NewRequestWithContext(ctx, method, "https://example.com", nil)
+	// Note: this does not have any impact on actual path when sending request
+	// `http.NewRequestxxx` internally only uses `u.Host` and all other data is stored in `url.URL` instance
+	httpReq, err := http.NewRequestWithContext(ctx, method, "https://"+urlx.Host, nil)
 	if err != nil {
 		return nil, err
 	}
