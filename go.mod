@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
-	github.com/projectdiscovery/utils v0.0.7
+	github.com/projectdiscovery/utils v0.0.8
 	golang.org/x/net v0.5.0
 )
 
