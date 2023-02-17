@@ -22,17 +22,8 @@ scanme.sh/with/path?some'param=`'+OR+ORDER+BY+1--
 ```
 All above mentioned cases are handled internally in `retryablehttp`.
 
-
-### request with unsafe urls
- 
-`retryablehttp` allows creating requests with unsafe urls but requires some extra steps if `path` of url contains encoded characters (ex: `/%invalid/path`).
-
-- `Request.Prepare()` method should be called before request is executed and this applies a quick fix to avoid double url encoding (ex: `%e5` => `%25e5`)
-
-Note: this is a optional feature and only required if we want to allow unsafe urls. If `Request.Prepare()` is not called it follows the standard behaviour.
-
 ### Note
-It is not recommended to update `url.URL` instance of `Request` once a new request is created (ex `req.URL.Path = xyz`) due to internal logic or urls.
+It is not recommended to update `url.URL` instance of `Request` once a new request is created (ex `req.URL.Path = xyz`) due to internal logic of urls.
 In any case if it is not possible to follow above point due to some reason helper methods are available to reflect such changes
 
 - `Request.Update()` commits any changes made to query parameters (ex: `Request.URL.Query().Add(x,y)`)
