@@ -54,7 +54,6 @@ func TestEncodedPaths(t *testing.T) {
 			t.Fatalf("got %v with payload %v", err.Error(), v)
 		}
 
-		req.Prepare()
 		bin, err := req.Dump()
 		if err != nil {
 			t.Errorf("failed to dump request body for payload %v got %v", v, err)

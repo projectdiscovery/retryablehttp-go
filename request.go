@@ -107,18 +107,6 @@ func (r *Request) Update() {
 	updateScheme(r.URL.URL)
 }
 
-// Prepares request (applies hot patch if any. Ex: Path Unescape to prevent double url encoding)
-// calling multiple times may have unexpected results unlike Update() method
-func (r *Request) Prepare() {
-	// hot patch to avoid url path encoding issues
-	// by default we decode encoded/escaped path and internally http.Request encodes them again
-	// this avoid double url encoding (or reencoding or path)
-	if rawPath, err := url.QueryUnescape(r.URL.Path); err == nil {
-		r.URL.Path = rawPath
-	}
-	r.Update()
-}
-
 // SetURL updates request url (i.e http.Request.URL) with given url
 func (r *Request) SetURL(u *urlutil.URL) {
 	r.URL = u
