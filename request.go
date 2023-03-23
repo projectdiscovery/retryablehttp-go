@@ -171,6 +171,14 @@ func FromRequest(r *http.Request) (*Request, error) {
 		Auth:    nil,
 	}
 
+	if r.URL != nil {
+		urlx, err := urlutil.Parse(r.URL.String())
+		if err != nil {
+			return nil, err
+		}
+		req.URL = urlx
+	}
+
 	if r.Body != nil {
 		body, err := readerutil.NewReusableReadCloser(r.Body)
 		if err != nil {
