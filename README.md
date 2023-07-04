@@ -8,6 +8,10 @@ Example of using `retryablehttp` in Go Code is available in [examples](examples/
 Examples of using Nuclei From Go Code to run templates on targets are provided in the examples folder.
 
 
+### ZTLS Fallback
+
+`retryablehttp` by default fallbacks to using zcrypto when there is an error in TLS handshake (ex: `no rengotiation` , ` insufficient security level` etc ). This is done to support older TLS versions and ciphers. This can be disabled by setting `RetryableClient.DisableFallbackTLS` to `true` or by using `DISABLE_ZTLS_FALLBACK` environment variable. when falling back to ztls, `ChromeCiphers` are used
+
 
 
 ### url encoding and parsing issues
