@@ -62,7 +62,6 @@ func DefaultReusePooledTransport() *http.Transport {
 			return tlsConn, err
 		}
 		// fallback to ztls
-		// Review: what other options should we set here by default ?
 		return ztls.DialWithDialer(dialerConfig, network, addr, &ztls.Config{
 			InsecureSkipVerify: true,
 			CipherSuites:       ztls.ChromeCiphers, // always fallback with chrome ciphers

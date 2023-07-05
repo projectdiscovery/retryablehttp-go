@@ -38,7 +38,6 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 	for i := 0; ; i++ {
 		// request body can be read multiple times
 		// hence no need to rewind it
-
 		if c.RequestLogHook != nil {
 			c.RequestLogHook(req.Request, i)
 		}
