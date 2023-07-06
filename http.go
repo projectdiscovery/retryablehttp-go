@@ -51,8 +51,14 @@ func DefaultReusePooledTransport() *http.Transport {
 			MinVersion:         tls.VersionTLS10,
 		},
 	}
-	transport.DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-		tlsConn, err := tls.DialWithDialer(dialerConfig, network, addr, transport.TLSClientConfig)
+	transport.DialTLSContext = GetZtlsFallbackDialTLSContext(dialerConfig, transport.TLSClientConfig)
+	return transport
+}
+
+// GetZtlsFallbackDialTLSContext returns a DialTLSContext function that will fallback to ztls if there is error in tls handshake
+func GetZtlsFallbackDialTLSContext(dialer *net.Dialer, tlsconfig *tls.Config) func(ctx context.Context, network, addr string) (net.Conn, error) {
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		tlsConn, err := tls.DialWithDialer(dialer, network, addr, tlsconfig)
 		if err == nil || DisableZTLSFallback {
 			// return if no error or ztls fallback is disabled
 			return tlsConn, err
@@ -62,12 +68,11 @@ func DefaultReusePooledTransport() *http.Transport {
 			return tlsConn, err
 		}
 		// fallback to ztls
-		return ztls.DialWithDialer(dialerConfig, network, addr, &ztls.Config{
+		return ztls.DialWithDialer(dialer, network, addr, &ztls.Config{
 			InsecureSkipVerify: true,
 			CipherSuites:       ztls.ChromeCiphers, // always fallback with chrome ciphers
 		})
 	}
-	return transport
 }
 
 // DefaultClient returns a new http.Client with similar default values to
