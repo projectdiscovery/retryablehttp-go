@@ -3,14 +3,13 @@ package retryablehttp
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	ztls "github.com/zmap/zcrypto/tls"
+	"github.com/projectdiscovery/fastdialer/fastdialer"
 )
 
 // DisableZTLSFallback disables use of ztls when there is error in tls handshake
@@ -31,11 +30,8 @@ func DefaultHostSprayingTransport() *http.Transport {
 // it can leak file descriptors over time. Only use this for transports that
 // will be re-used for the same host(s).
 func DefaultReusePooledTransport() *http.Transport {
-	dialerConfig := &net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
-		DualStack: true,
-	}
+	opts := fastdialer.DefaultOptions
+	fd, _ := fastdialer.NewDialer(opts)
 	transport := &http.Transport{
 		Proxy:                  http.ProxyFromEnvironment,
 		DialContext:            dialerConfig.DialContext,
@@ -51,28 +47,15 @@ func DefaultReusePooledTransport() *http.Transport {
 			MinVersion:         tls.VersionTLS10,
 		},
 	}
-	transport.DialTLSContext = GetZtlsFallbackDialTLSContext(dialerConfig, transport.TLSClientConfig)
-	return transport
-}
-
-// GetZtlsFallbackDialTLSContext returns a DialTLSContext function that will fallback to ztls if there is error in tls handshake
-func GetZtlsFallbackDialTLSContext(dialer *net.Dialer, tlsconfig *tls.Config) func(ctx context.Context, network, addr string) (net.Conn, error) {
-	return func(ctx context.Context, network, addr string) (net.Conn, error) {
-		tlsConn, err := tls.DialWithDialer(dialer, network, addr, tlsconfig)
-		if err == nil || DisableZTLSFallback {
-			// return if no error or ztls fallback is disabled
-			return tlsConn, err
+	if fd != nil {
+		transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return fd.Dial(ctx, network, addr)
 		}
-		// skip ztls fallback for timeout errors
-		if errors.Is(err, os.ErrDeadlineExceeded) {
-			return tlsConn, err
+		transport.DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return fd.DialTLS(ctx, network, addr)
 		}
-		// fallback to ztls
-		return ztls.DialWithDialer(dialer, network, addr, &ztls.Config{
-			InsecureSkipVerify: true,
-			CipherSuites:       ztls.ChromeCiphers, // always fallback with chrome ciphers
-		})
 	}
+	return transport
 }
 
 // DefaultClient returns a new http.Client with similar default values to
