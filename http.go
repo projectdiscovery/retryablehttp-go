@@ -34,7 +34,6 @@ func DefaultReusePooledTransport() *http.Transport {
 	fd, _ := fastdialer.NewDialer(opts)
 	transport := &http.Transport{
 		Proxy:                  http.ProxyFromEnvironment,
-		DialContext:            dialerConfig.DialContext,
 		MaxIdleConns:           100,
 		IdleConnTimeout:        90 * time.Second,
 		TLSHandshakeTimeout:    10 * time.Second,
