@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
-	github.com/projectdiscovery/fastdialer v0.0.33-0.20230706130610-e6932c73b6ee
+	github.com/projectdiscovery/fastdialer v0.0.35-0.20230712222521-f5386e7cfc12
 	github.com/projectdiscovery/utils v0.0.41
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.12.0
