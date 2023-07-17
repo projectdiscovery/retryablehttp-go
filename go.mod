@@ -1,6 +1,6 @@
 module github.com/projectdiscovery/retryablehttp-go
 
-go 1.19
+go 1.20
 
 require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
@@ -28,7 +28,7 @@ require (
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
 	github.com/projectdiscovery/hmap v0.0.13 // indirect
 	github.com/projectdiscovery/networkpolicy v0.0.6 // indirect
-	github.com/projectdiscovery/retryabledns v1.0.31-0.20230711212037-68c038b22cdb // indirect
+	github.com/projectdiscovery/retryabledns v1.0.31 // indirect
 	github.com/refraction-networking/utls v1.3.2 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
