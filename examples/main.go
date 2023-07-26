@@ -3,7 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
+	"log"
 	"net/http/httputil"
+	"sync"
 
 	"github.com/projectdiscovery/retryablehttp-go"
 )
@@ -18,6 +21,7 @@ func main() {
 	flag.BoolVar(&short, "short", false, "Skip printing http response body")
 	flag.Parse()
 
+	// close connection after each request
 	opts := retryablehttp.DefaultOptionsSpraying
 	// opts := retryablehttp.DefaultOptionsSingle // use single options for single host
 	client := retryablehttp.NewClient(opts)
@@ -31,4 +35,29 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(string(bin))
+
+	// connection reuse
+	opts = retryablehttp.DefaultOptionsSingle
+	client = retryablehttp.NewClient(opts)
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for i := 0; i < 1000; i++ {
+				resp, err := client.Get(url)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				io.Copy(io.Discard, resp.Body)
+				resp.Body.Close()
+			}
+		}()
+	}
+
+	wg.Wait()
 }

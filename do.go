@@ -139,7 +139,6 @@ func (c *Client) drainBody(req *Request, resp *http.Response) {
 const closeConnectionsCounter = 100
 
 func (c *Client) closeIdleConnections() {
-	return
 	if c.options.KillIdleConn {
 		if c.requestCounter.Load() < closeConnectionsCounter {
 			c.requestCounter.Add(1)
