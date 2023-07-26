@@ -42,12 +42,12 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 5; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
-			for i := 0; i < 1000; i++ {
+			for i := 0; i < 20; i++ {
 				resp, err := client.Get(url)
 				if err != nil {
 					log.Println(err)
