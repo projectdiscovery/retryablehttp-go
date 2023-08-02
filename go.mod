@@ -7,7 +7,7 @@ require (
 	github.com/projectdiscovery/fastdialer v0.0.35-0.20230712222521-f5386e7cfc12
 	github.com/projectdiscovery/utils v0.0.45
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/net v0.12.0
+	golang.org/x/net v0.13.0
 )
 
 require (
