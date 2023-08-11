@@ -31,6 +31,7 @@ func DefaultHostSprayingTransport() *http.Transport {
 // will be re-used for the same host(s).
 func DefaultReusePooledTransport() *http.Transport {
 	opts := fastdialer.DefaultOptions
+	opts.CacheType = fastdialer.Memory
 	fd, _ := fastdialer.NewDialer(opts)
 	transport := &http.Transport{
 		Proxy:                  http.ProxyFromEnvironment,
