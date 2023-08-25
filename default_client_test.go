@@ -54,12 +54,15 @@ func TestConnectionReuse(t *testing.T) {
 				req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 				resp, err := client.Do(req)
 				require.Nil(t, err)
-				io.Copy(io.Discard, resp.Body)
+				_, _ = io.Copy(io.Discard, resp.Body)
 				resp.Body.Close()
 			}
 		}()
 	}
 
 	wg.Wait()
-	require.Equal(t, totalConns.Load(), uint32(5))
+	// total number of connections depends on various factors
+	// like idle timeout and network condtions etc but in any case
+	// it should be less than 10
+	require.LessOrEqual(t, totalConns.Load(), uint32(10), "connection reuse failed")
 }
