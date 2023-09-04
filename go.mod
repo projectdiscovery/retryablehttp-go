@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/projectdiscovery/fastdialer v0.0.36
+	github.com/projectdiscovery/fastdialer v0.0.37
 	github.com/projectdiscovery/utils v0.0.52
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.14.0
@@ -16,12 +16,13 @@ require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
+	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
-	github.com/gaukas/godicttls v0.0.3 // indirect
+	github.com/gaukas/godicttls v0.0.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
-	github.com/klauspost/compress v1.16.6 // indirect
+	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.25 // indirect
 	github.com/miekg/dns v1.1.55 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -30,8 +31,8 @@ require (
 	github.com/projectdiscovery/hmap v0.0.16 // indirect
 	github.com/projectdiscovery/networkpolicy v0.0.6 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.35 // indirect
-	github.com/quic-go/quic-go v0.37.0 // indirect
-	github.com/refraction-networking/utls v1.4.2 // indirect
+	github.com/quic-go/quic-go v0.37.4 // indirect
+	github.com/refraction-networking/utls v1.5.2 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tidwall/btree v1.4.3 // indirect
