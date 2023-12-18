@@ -80,8 +80,8 @@ github.com/projectdiscovery/hmap v0.0.29 h1:YPnwrvyeF0jxWloRq45rG3GZrUTu5gZYizEI
 github.com/projectdiscovery/hmap v0.0.29/go.mod h1:08/3+VcqLg9W/RViplkbIiYXDNltCDlF+P7oCQblprA=
 github.com/projectdiscovery/networkpolicy v0.0.6 h1:yDvm0XCrS9HeemRrBS+J+22surzVczM94W5nHiOy/1o=
 github.com/projectdiscovery/networkpolicy v0.0.6/go.mod h1:8HJQ/33Pi7v3a3MRWIQGXzpj+zHw2d60TysEL4qdoQk=
-github.com/projectdiscovery/retryabledns v1.0.46 h1:5mcWuEjdIjNpsvFWyxlnB1qEb1Esq4h63A5CjlkVunM=
-github.com/projectdiscovery/retryabledns v1.0.46/go.mod h1:qsPrT4NpecbTUJaoZ1XzHPBq3NBsRDU0qXp2geGE3dE=
+github.com/projectdiscovery/retryabledns v1.0.47 h1:9h/9H2YWg68mampF2re5CCQ2lAxBLzq/N0daN6kdUTQ=
+github.com/projectdiscovery/retryabledns v1.0.47/go.mod h1:TRErBaFkW2Gx73EepHeYSLgtD2ZCbNj1dTS9SuLd5GA=
 github.com/projectdiscovery/utils v0.0.68 h1:rWvuG61oWeNzboYtugc3sG2uw5k8uptfHoth4CypVQI=
 github.com/projectdiscovery/utils v0.0.68/go.mod h1:c5XnwkcffXqma9Hf781Osekfuqehb981gdlQiBZ5QvU=
 github.com/quic-go/quic-go v0.37.4 h1:ke8B73yMCWGq9MfrCCAw0Uzdm7GaViC3i39dsIdDlH4=
