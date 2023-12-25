@@ -6,14 +6,14 @@ require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/projectdiscovery/fastdialer v0.0.50
-	github.com/projectdiscovery/utils v0.0.68
+	github.com/projectdiscovery/utils v0.0.69
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.17.0
 )
 
 require (
 	github.com/akrylysov/pogreb v0.10.1 // indirect
-	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
