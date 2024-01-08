@@ -78,8 +78,8 @@ github.com/projectdiscovery/fastdialer v0.0.50 h1:NJyuiSMi0Fy78+qSVhqRs83NtKyM91
 github.com/projectdiscovery/fastdialer v0.0.50/go.mod h1:y8X6at1FyRwmSig6+amuRXnxViDRGGK7S2EAvxf7mDo=
 github.com/projectdiscovery/hmap v0.0.31 h1:vJDZD+VUHzKtFbmF8z75WPwNv9zFpje2F63RAwa3Hjw=
 github.com/projectdiscovery/hmap v0.0.31/go.mod h1:FeBmGo9wqgTLd+F/tPOPEoFg6MTn+ynhGSNtWA0/pSk=
-github.com/projectdiscovery/networkpolicy v0.0.6 h1:yDvm0XCrS9HeemRrBS+J+22surzVczM94W5nHiOy/1o=
-github.com/projectdiscovery/networkpolicy v0.0.6/go.mod h1:8HJQ/33Pi7v3a3MRWIQGXzpj+zHw2d60TysEL4qdoQk=
+github.com/projectdiscovery/networkpolicy v0.0.7 h1:AwHqBRXBqDQgnWzBMuoJtHBNEYBw+NFp/4qIK688x7o=
+github.com/projectdiscovery/networkpolicy v0.0.7/go.mod h1:CK0CnFoLF1Nou6mY7P4WODSAxhPN8g8g7XpapgEP8tI=
 github.com/projectdiscovery/retryabledns v1.0.48 h1:7m4aB5IK3P6UKkA4abBxerJYApzP4yraXj4Ju8kZ9zU=
 github.com/projectdiscovery/retryabledns v1.0.48/go.mod h1:XvdWQjIaohj9HTS+5ZxL6fRCoOP4JpB6w78eiXXDia4=
 github.com/projectdiscovery/utils v0.0.68 h1:rWvuG61oWeNzboYtugc3sG2uw5k8uptfHoth4CypVQI=
