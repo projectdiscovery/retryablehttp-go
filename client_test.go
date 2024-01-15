@@ -11,16 +11,17 @@ import (
 	"time"
 
 	"github.com/projectdiscovery/retryablehttp-go/buggyhttp"
+	urlutil "github.com/projectdiscovery/utils/url"
+	"github.com/stretchr/testify/require"
 )
 
 // TestRequest parsing methodology
 func TestRequest(t *testing.T) {
 	// Fails on invalid request
-	_, err := NewRequest("GET", "://foo", nil)
-	if err == nil {
-		t.Fatalf("should error")
-	}
-
+	_, err := urlutil.ParseAbsoluteURL("://foo", false)
+	require.NotNil(t, err)
+	_, err = NewRequest("GET", "://foo", nil)
+	require.NotNilf(t, err, "invalid url '://foo' did not fail")
 	// Works with no request body
 	_, err = NewRequest("GET", "http://foo", nil)
 	if err != nil {
