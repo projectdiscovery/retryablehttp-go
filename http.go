@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/projectdiscovery/fastdialer/fastdialer"
@@ -30,9 +31,7 @@ func DefaultHostSprayingTransport() *http.Transport {
 // it can leak file descriptors over time. Only use this for transports that
 // will be re-used for the same host(s).
 func DefaultReusePooledTransport() *http.Transport {
-	opts := fastdialer.DefaultOptions
-	opts.CacheType = fastdialer.Memory
-	fd, _ := fastdialer.NewDialer(opts)
+	fd, _ := getFastDialer()
 	transport := &http.Transport{
 		Proxy:                  http.ProxyFromEnvironment,
 		MaxIdleConns:           100,
@@ -75,6 +74,22 @@ func DefaultPooledClient() *http.Client {
 	return &http.Client{
 		Transport: DefaultReusePooledTransport(),
 	}
+}
+
+var (
+	fdInit = &sync.Once{}
+	fd     *fastdialer.Dialer
+	err    error
+)
+
+// getFastDialer returns a fastdialer.Dialer instance without creating it again
+func getFastDialer() (*fastdialer.Dialer, error) {
+	fdInit.Do(func() {
+		opts := fastdialer.DefaultOptions
+		opts.CacheType = fastdialer.Memory
+		fd, err = fastdialer.NewDialer(fastdialer.DefaultOptions)
+	})
+	return fd, err
 }
 
 func init() {
