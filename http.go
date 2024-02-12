@@ -44,6 +44,7 @@ func DefaultReusePooledTransport() *http.Transport {
 			Renegotiation:      tls.RenegotiateOnceAsClient, // Renegotiation is not supported in TLS 1.3 as per docs
 			InsecureSkipVerify: true,
 			MinVersion:         tls.VersionTLS10,
+			CipherSuites:       getUnsafeCipherSuites(),
 		},
 	}
 	if fd != nil {
@@ -90,6 +91,18 @@ func getFastDialer() (*fastdialer.Dialer, error) {
 		fd, err = fastdialer.NewDialer(fastdialer.DefaultOptions)
 	})
 	return fd, err
+}
+
+// getUnsafeCipherSuites returns a list of ID of unsafe cipher suites.
+func getUnsafeCipherSuites() []uint16 {
+	unsafeCipherSuites := make([]uint16, 0, len(tls.InsecureCipherSuites())+len(tls.CipherSuites()))
+	for _, suite := range tls.InsecureCipherSuites() {
+		unsafeCipherSuites = append(unsafeCipherSuites, suite.ID)
+	}
+	for _, suite := range tls.CipherSuites() {
+		unsafeCipherSuites = append(unsafeCipherSuites, suite.ID)
+	}
+	return unsafeCipherSuites
 }
 
 func init() {
