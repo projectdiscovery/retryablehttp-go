@@ -6,7 +6,7 @@ require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/projectdiscovery/fastdialer v0.0.63
-	github.com/projectdiscovery/utils v0.0.83
+	github.com/projectdiscovery/utils v0.0.84
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/net v0.17.0
 )
@@ -54,7 +54,7 @@ require (
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
