@@ -6,7 +6,7 @@ require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/projectdiscovery/fastdialer v0.0.71
-	github.com/projectdiscovery/utils v0.0.92
+	github.com/projectdiscovery/utils v0.0.93
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/net v0.23.0
 )
@@ -25,6 +25,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.25 // indirect
 	github.com/miekg/dns v1.1.56 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
