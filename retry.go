@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+
+	"github.com/projectdiscovery/utils/errkit"
 )
 
 var (
@@ -69,6 +71,11 @@ func CheckRecoverableErrors(ctx context.Context, resp *http.Response, err error)
 			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
 				return false, nil
 			}
+		}
+		// look for permanent errors
+		if errkit.IsKind(err, errkit.ErrKindNetworkPermanent) {
+			// donot retry on permanent network errors
+			return false, err
 		}
 		// The error is likely recoverable so retry.
 		return true, nil
