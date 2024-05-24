@@ -5,8 +5,8 @@ go 1.21
 require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/projectdiscovery/fastdialer v0.0.73-0.20240522204742-2c8e7b142f20
-	github.com/projectdiscovery/utils v0.0.95-0.20240522204248-10ef59b98abe
+	github.com/projectdiscovery/fastdialer v0.1.0
+	github.com/projectdiscovery/utils v0.1.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/net v0.23.0
 )
