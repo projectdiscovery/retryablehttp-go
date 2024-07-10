@@ -23,6 +23,12 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 	var resp *http.Response
 	var err error
 
+	for _, middleware := range c.onBeforeRequest {
+		if err := middleware(c, req); err != nil {
+			return nil, err
+		}
+	}
+
 	// Create a main context that will be used as the main timeout
 	mainCtx, cancel := context.WithTimeout(context.Background(), c.options.Timeout)
 	defer cancel()

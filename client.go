@@ -11,6 +11,8 @@ import (
 // Client is used to make HTTP requests. It adds additional functionality
 // like automatic retries to tolerate minor outages.
 type Client struct {
+	onBeforeRequest []ClientRequestMiddleware
+
 	// HTTPClient is the internal HTTP client (http1x + http2 via connection upgrade upgrade).
 	HTTPClient *http.Client
 	// HTTPClient is the internal HTTP client configured to fallback to native http2 at transport level
@@ -35,6 +37,10 @@ type Client struct {
 
 	options Options
 }
+
+// ClientRequestMiddleware is a function that can be used to modify a request
+// before it is sent by the client.
+type ClientRequestMiddleware func(client *Client, req *Request) error
 
 // Options contains configuration options for the client
 type Options struct {
@@ -61,6 +67,8 @@ type Options struct {
 	NoAdjustTimeout bool
 	// Custom http client
 	HttpClient *http.Client
+
+	OnBeforeRequest []ClientRequestMiddleware
 }
 
 // DefaultOptionsSpraying contains the default options for host spraying
@@ -128,11 +136,12 @@ func NewClient(options Options) *Client {
 	}
 
 	c := &Client{
-		HTTPClient:  httpclient,
-		HTTPClient2: httpclient2,
-		CheckRetry:  retryPolicy,
-		Backoff:     backoff,
-		options:     options,
+		onBeforeRequest: options.OnBeforeRequest,
+		HTTPClient:      httpclient,
+		HTTPClient2:     httpclient2,
+		CheckRetry:      retryPolicy,
+		Backoff:         backoff,
+		options:         options,
 	}
 
 	c.setKillIdleConnections()
