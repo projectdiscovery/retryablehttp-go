@@ -1,17 +1,23 @@
 package retryablehttp
 
 import (
+	"context"
+	"crypto/tls"
+	"net"
 	"net/http"
 	"sync/atomic"
 	"time"
 
+	"github.com/projectdiscovery/fastdialer/fastdialer/ja3/impersonate"
+	utls "github.com/refraction-networking/utls"
 	"golang.org/x/net/http2"
 )
 
 // Client is used to make HTTP requests. It adds additional functionality
 // like automatic retries to tolerate minor outages.
 type Client struct {
-	onBeforeRequest []ClientRequestMiddleware
+	// OnBeforeRequest is a list of functions that can be used to modify a request
+	OnBeforeRequest []ClientRequestMiddleware
 
 	// HTTPClient is the internal HTTP client (http1x + http2 via connection upgrade upgrade).
 	HTTPClient *http.Client
@@ -68,7 +74,8 @@ type Options struct {
 	// Custom http client
 	HttpClient *http.Client
 
-	OnBeforeRequest []ClientRequestMiddleware
+	// ImpersonateChrome specifies if the client should impersonate Chrome
+	ImpersonateChrome bool
 }
 
 // DefaultOptionsSpraying contains the default options for host spraying
@@ -98,15 +105,30 @@ var DefaultOptionsSingle = Options{
 // NewClient creates a new Client with default settings.
 func NewClient(options Options) *Client {
 	var httpclient *http.Client
+	var httptransport *http.Transport
 	if options.HttpClient != nil {
 		httpclient = options.HttpClient
+		httptransport = options.HttpClient.Transport.(*http.Transport)
 	} else if options.KillIdleConn {
-		httpclient = DefaultClient()
+		httpclient, httptransport = DefaultClient()
 	} else {
-		httpclient = DefaultPooledClient()
+		httpclient, httptransport = DefaultPooledClient()
 	}
 
-	httpclient2 := DefaultClient()
+	httpclient2, _ := DefaultClient()
+	// This transport is only used during impersonation so we
+	// set according to chrome options.
+	httptransport2 := &http2.Transport{
+		IdleConnTimeout: 90 * time.Second,
+		TLSClientConfig: &tls.Config{
+			Renegotiation:      tls.RenegotiateOnceAsClient, // Renegotiation is not supported in TLS 1.3 as per docs
+			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS10,
+		},
+		MaxHeaderListSize:         262144,
+		MaxDecoderHeaderTableSize: 65536,
+		MaxEncoderHeaderTableSize: 65536,
+	}
 	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
 		return nil
 	}
@@ -136,12 +158,23 @@ func NewClient(options Options) *Client {
 	}
 
 	c := &Client{
-		onBeforeRequest: options.OnBeforeRequest,
-		HTTPClient:      httpclient,
-		HTTPClient2:     httpclient2,
-		CheckRetry:      retryPolicy,
-		Backoff:         backoff,
-		options:         options,
+		HTTPClient:  httpclient,
+		HTTPClient2: httpclient2,
+		CheckRetry:  retryPolicy,
+		Backoff:     backoff,
+		options:     options,
+	}
+	if options.ImpersonateChrome {
+		c.OnBeforeRequest = append(c.OnBeforeRequest, MiddlewareOnBeforeRequestAddHeaders(imperasonateChromeHeaders))
+		httptransport2.DialTLSContext = func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
+			fd, _ := getFastDialer()
+			return fd.DialTLSWithConfigImpersonate(ctx, network, addr, cfg, impersonate.Chrome, nil)
+		}
+		c.HTTPClient.Transport = &bypassJA3Transport{
+			tr1:         httptransport,
+			tr2:         httptransport2,
+			clientHello: utls.HelloChrome_106_Shuffle,
+		}
 	}
 
 	c.setKillIdleConnections()
