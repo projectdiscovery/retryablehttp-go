@@ -13,6 +13,8 @@ import (
 	"golang.org/x/net/http2"
 )
 
+// Source: https://github.com/imroc/req/blob/master/client_impersonate.go
+
 // Client is used to make HTTP requests. It adds additional functionality
 // like automatic retries to tolerate minor outages.
 type Client struct {
@@ -108,14 +110,14 @@ func NewClient(options Options) *Client {
 	var httptransport *http.Transport
 	if options.HttpClient != nil {
 		httpclient = options.HttpClient
-		httptransport = options.HttpClient.Transport.(*http.Transport)
 	} else if options.KillIdleConn {
-		httpclient, httptransport = DefaultClient()
+		httpclient = DefaultClient()
 	} else {
-		httpclient, httptransport = DefaultPooledClient()
+		httpclient = DefaultPooledClient()
 	}
+	httptransport = httpclient.Transport.(*http.Transport)
 
-	httpclient2, _ := DefaultClient()
+	httpclient2 := DefaultClient()
 	// This transport is only used during impersonation so we
 	// set according to chrome options.
 	httptransport2 := &http2.Transport{
