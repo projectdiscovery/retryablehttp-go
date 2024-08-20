@@ -61,6 +61,8 @@ type Options struct {
 	NoAdjustTimeout bool
 	// Custom http client
 	HttpClient *http.Client
+	// Trace enables tracing of the HTTP request
+	Trace bool
 }
 
 // DefaultOptionsSpraying contains the default options for host spraying

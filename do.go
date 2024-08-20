@@ -2,9 +2,11 @@ package retryablehttp
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptrace"
 	"strings"
 	"time"
 
@@ -39,6 +41,10 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 		// hence no need to rewind it
 		if c.RequestLogHook != nil {
 			c.RequestLogHook(req.Request, i)
+		}
+
+		if c.options.Trace {
+			c.wrapContextWithTrace(req)
 		}
 
 		if req.hasAuth() && req.Auth.Type == DigestAuth {
@@ -147,4 +153,99 @@ func (c *Client) closeIdleConnections() {
 			c.HTTPClient.CloseIdleConnections()
 		}
 	}
+}
+
+func (c *Client) wrapContextWithTrace(req *Request) {
+	traceInfo := &TraceInfo{}
+	trace := &httptrace.ClientTrace{
+		GotConn: func(connInfo httptrace.GotConnInfo) {
+			traceInfo.GotConn = TraceEventInfo{
+				Time: time.Now(),
+				Info: connInfo,
+			}
+		},
+		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+			traceInfo.DNSDone = TraceEventInfo{
+				Time: time.Now(),
+				Info: dnsInfo,
+			}
+		},
+		GetConn: func(hostPort string) {
+			traceInfo.GetConn = TraceEventInfo{
+				Time: time.Now(),
+				Info: hostPort,
+			}
+		},
+		PutIdleConn: func(err error) {
+			traceInfo.PutIdleConn = TraceEventInfo{
+				Time: time.Now(),
+				Info: err,
+			}
+		},
+		GotFirstResponseByte: func() {
+			traceInfo.GotFirstResponseByte = TraceEventInfo{
+				Time: time.Now(),
+			}
+		},
+		Got100Continue: func() {
+			traceInfo.Got100Continue = TraceEventInfo{
+				Time: time.Now(),
+			}
+		},
+		DNSStart: func(di httptrace.DNSStartInfo) {
+			traceInfo.DNSStart = TraceEventInfo{
+				Time: time.Now(),
+				Info: di,
+			}
+		},
+		ConnectStart: func(network, addr string) {
+			traceInfo.ConnectStart = TraceEventInfo{
+				Time: time.Now(),
+				Info: struct {
+					Network, Addr string
+				}{network, addr},
+			}
+		},
+		ConnectDone: func(network, addr string, err error) {
+			if err == nil {
+				traceInfo.ConnectDone = TraceEventInfo{
+					Time: time.Now(),
+					Info: struct {
+						Network, Addr string
+						Error         error
+					}{network, addr, err},
+				}
+			}
+		},
+		TLSHandshakeStart: func() {
+			traceInfo.TLSHandshakeStart = TraceEventInfo{
+				Time: time.Now(),
+			}
+		},
+		TLSHandshakeDone: func(cs tls.ConnectionState, err error) {
+			if err == nil {
+				traceInfo.TLSHandshakeDone = TraceEventInfo{
+					Time: time.Now(),
+					Info: struct {
+						ConnectionState tls.ConnectionState
+						Error           error
+					}{cs, err},
+				}
+			}
+		},
+		WroteHeaders: func() {
+			traceInfo.WroteHeaders = TraceEventInfo{
+				Time: time.Now(),
+			}
+		},
+		WroteRequest: func(wri httptrace.WroteRequestInfo) {
+			traceInfo.WroteRequest = TraceEventInfo{
+				Time: time.Now(),
+				Info: wri,
+			}
+		},
+	}
+	req.TraceInfo = traceInfo
+
+	req.Request = req.Request.WithContext(httptrace.WithClientTrace(req.Request.Context(), trace))
 }
