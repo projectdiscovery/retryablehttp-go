@@ -32,6 +32,8 @@ type Request struct {
 	Metrics Metrics
 
 	Auth *Auth
+
+	TraceInfo *TraceInfo
 }
 
 // Metrics contains the metrics about each request
@@ -255,7 +257,13 @@ func NewRequestFromURLWithContext(ctx context.Context, method string, urlx *urlu
 		httpReq.Body = bodyReader
 	}
 
-	return &Request{httpReq, urlx, Metrics{}, nil}, nil
+	request := &Request{
+		Request: httpReq,
+		URL:     urlx,
+		Metrics: Metrics{},
+	}
+
+	return request, nil
 }
 
 // NewRequest creates a new wrapped request
