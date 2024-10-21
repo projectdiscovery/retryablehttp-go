@@ -6,7 +6,7 @@ require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/projectdiscovery/fastdialer v0.2.9
-	github.com/projectdiscovery/utils v0.2.14
+	github.com/projectdiscovery/utils v0.2.15
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/net v0.29.0
 )
@@ -34,7 +34,7 @@ require (
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
 	github.com/projectdiscovery/hmap v0.0.62 // indirect
 	github.com/projectdiscovery/networkpolicy v0.0.9 // indirect
-	github.com/projectdiscovery/retryabledns v1.0.79 // indirect
+	github.com/projectdiscovery/retryabledns v1.0.80 // indirect
 	github.com/refraction-networking/utls v1.6.7 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
