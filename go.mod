@@ -32,7 +32,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
-	github.com/projectdiscovery/hmap v0.0.74 // indirect
+	github.com/projectdiscovery/hmap v0.0.75 // indirect
 	github.com/projectdiscovery/networkpolicy v0.1.1 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.92 // indirect
 	github.com/refraction-networking/utls v1.6.7 // indirect
