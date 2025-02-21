@@ -26,7 +26,7 @@ func TestRequestUrls(t *testing.T) {
 	for _, v := range testcases {
 		req, err := retryablehttp.NewRequest("GET", v, nil)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Errorf("got %v with url %v", err.Error(), v)
 			continue
 		}
 		bin, err := req.Dump()

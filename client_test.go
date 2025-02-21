@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -407,5 +408,5 @@ func TestMain(m *testing.M) {
 	// start buggyhttp
 	buggyhttp.Listen(8080)
 	defer buggyhttp.Stop()
-	m.Run()
+	os.Exit(m.Run())
 }
