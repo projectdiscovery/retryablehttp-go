@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptrace"
-	"strings"
 	"time"
 
 	dac "github.com/Mzack9999/go-http-digest-auth-client"
+	stringsutil "github.com/projectdiscovery/utils/strings"
 )
 
 // PassthroughErrorHandler is an ErrorHandler that directly passes through the
@@ -60,7 +60,7 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 		checkOK, checkErr := c.CheckRetry(req.Context(), resp, err)
 
 		// if err is equal to missing minor protocol version retry with http/2
-		if err != nil && strings.Contains(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"") {
+		if err != nil && stringsutil.ContainsAny(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"", "net/http: HTTP/1.x transport connection broken: malformed HTTP response") {
 			resp, err = c.HTTPClient2.Do(req.Request)
 			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
 		}
