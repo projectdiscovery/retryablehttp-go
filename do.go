@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptrace"
-	"strings"
 	"time"
 
 	dac "github.com/Mzack9999/go-http-digest-auth-client"
