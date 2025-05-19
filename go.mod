@@ -21,7 +21,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/gaissmai/bart v0.17.10 // indirect
+	github.com/gaissmai/bart v0.20.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
@@ -32,7 +32,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
 	github.com/projectdiscovery/hmap v0.0.89 // indirect
-	github.com/projectdiscovery/networkpolicy v0.1.14 // indirect
+	github.com/projectdiscovery/networkpolicy v0.1.15 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.100 // indirect
 	github.com/refraction-networking/utls v1.7.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
