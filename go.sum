@@ -27,8 +27,8 @@ github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDD
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
-github.com/gaissmai/bart v0.17.10 h1:TY1y++A6N/ESrwRLTRWrnVOrQpZqpOYSVnKMu/FYW6o=
-github.com/gaissmai/bart v0.17.10/go.mod h1:JCPkH/Xt5bSPCKDc6OpzkhSCeib8BIxu3kthzZwcl6w=
+github.com/gaissmai/bart v0.20.4 h1:Ik47r1fy3jRVU+1eYzKSW3ho2UgBVTVnUS8O993584U=
+github.com/gaissmai/bart v0.20.4/go.mod h1:cEed+ge8dalcbpi8wtS9x9m2hn/fNJH5suhdGQOHnYk=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
@@ -89,8 +89,8 @@ github.com/projectdiscovery/fastdialer v0.4.0 h1:licZKyq+Shd5lLDb8uPd60Jp43K4NFE
 github.com/projectdiscovery/fastdialer v0.4.0/go.mod h1:Q0YLArvpx9GAfY/NcTPMCA9qZuVOGnuVoNYWzKBwxdQ=
 github.com/projectdiscovery/hmap v0.0.89 h1:H+XIzk2YcE/9PpW/1N9NdQSrJWm2vthGPNIxSM+WHNU=
 github.com/projectdiscovery/hmap v0.0.89/go.mod h1:N3gXFDLN6GqkYsk+2ZkReVOo32OBUV+PNiYyWhWG4ZE=
-github.com/projectdiscovery/networkpolicy v0.1.14 h1:XnwpGjF+h9xgwEIgrFG3G+7cGRPwh6FkxgQaLuw4rv4=
-github.com/projectdiscovery/networkpolicy v0.1.14/go.mod h1:pat2rE4G7kbow8CQ/yOym0bdLPq8rj7ZZWn3/3OT4Rs=
+github.com/projectdiscovery/networkpolicy v0.1.15 h1:jHHPo43s/TSiWmm6T8kJuMqTwL3ukU92iQhxq0K0jg0=
+github.com/projectdiscovery/networkpolicy v0.1.15/go.mod h1:GWMDGJmgJ9qGoVTUOxbq1oLIbEx0pPsL0VKlriCkn2g=
 github.com/projectdiscovery/retryabledns v1.0.100 h1:u4dv88P4lZOUCBpCYtmd/McpJ9ThPmdgNLLNwK0a3g4=
 github.com/projectdiscovery/retryabledns v1.0.100/go.mod h1:fQI91PKUyTZYL2pYloyA9Bh3Bq8IgOB6X+bN+8Xm14I=
 github.com/projectdiscovery/utils v0.4.19 h1:rWOOTWUMQK9gvgH01rrw0qFi0hrh712hM1pCUzapCqA=
