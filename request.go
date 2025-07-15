@@ -105,13 +105,17 @@ func (r *Request) BodyBytes() ([]byte, error) {
 
 // Update request URL with new changes of parameters if any
 func (r *Request) Update() {
+	// Make a copy of the URL to avoid data races
+	r.URL = r.URL.Clone()
 	r.URL.Update()
+	r.Request.URL = r.URL.URL
 	updateScheme(r.URL.URL)
 }
 
 // SetURL updates request url (i.e http.Request.URL) with given url
 func (r *Request) SetURL(u *urlutil.URL) {
-	r.URL = u
+	// Make a copy of the URL to avoid data races
+	r.URL = u.Clone()
 	r.Request.URL = u.URL
 	r.Update()
 }
@@ -119,7 +123,7 @@ func (r *Request) SetURL(u *urlutil.URL) {
 // Clones and returns new Request
 func (r *Request) Clone(ctx context.Context) *Request {
 	r.Update()
-	ux := r.URL.Clone()
+	ux := r.URL
 	req := r.Request.Clone(ctx)
 	req.URL = ux.URL
 	ux.Update()
