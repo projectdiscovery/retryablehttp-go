@@ -123,7 +123,7 @@ func (r *Request) SetURL(u *urlutil.URL) {
 // Clones and returns new Request
 func (r *Request) Clone(ctx context.Context) *Request {
 	r.Update()
-	ux := r.URL.Clone()
+	ux := r.URL
 	req := r.Request.Clone(ctx)
 	req.URL = ux.URL
 	ux.Update()
