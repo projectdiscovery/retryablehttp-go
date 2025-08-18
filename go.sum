@@ -28,8 +28,8 @@ github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDD
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
-github.com/gaissmai/bart v0.23.1 h1:8+EYZZcm9xObBgCIBb8f5sg65qVtphg7VcbMOjuvNrE=
-github.com/gaissmai/bart v0.23.1/go.mod h1:RpLtt3lWq1BoRz3AAyDAJ7jhLWBkYhVCfi+ximB2t68=
+github.com/gaissmai/bart v0.24.0 h1:HOq5aXDBa4d376KkuxD+xnS9DQWWJtD4zgDNoGV0KrQ=
+github.com/gaissmai/bart v0.24.0/go.mod h1:RpLtt3lWq1BoRz3AAyDAJ7jhLWBkYhVCfi+ximB2t68=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
@@ -91,8 +91,8 @@ github.com/projectdiscovery/fastdialer v0.4.6 h1:7cw47IyrkVHCEM80dBDhjT4YNsPY2IA
 github.com/projectdiscovery/fastdialer v0.4.6/go.mod h1:IRbTB9d2GNT1EyxA16b/HJpqYbnNXk6hsH8CRZkdukc=
 github.com/projectdiscovery/hmap v0.0.92 h1:NHGDFVJzc7b8bDuIjss7SxX5LJla9py/RxC4lri+uBo=
 github.com/projectdiscovery/hmap v0.0.92/go.mod h1:IKezuOhPPwrmPusmhLuwuGsD8+fniyy6jx4gFTOZOnI=
-github.com/projectdiscovery/networkpolicy v0.1.20 h1:dPUk3FKoAehMnFvphAZLq6khDCbPYPJnD6PPTcjp5nU=
-github.com/projectdiscovery/networkpolicy v0.1.20/go.mod h1:laPi8mLbgCbYZ0kYQU4fkWCFQdFbx24ci7yBQA8Hcww=
+github.com/projectdiscovery/networkpolicy v0.1.21 h1:BOlYxPyrfqb5DneyuokZkRpeX5MCXLjCH4sI2hLudII=
+github.com/projectdiscovery/networkpolicy v0.1.21/go.mod h1:/DI9DZANBQ20x09mvcHA0J/3dCLBgCkEW5r5/L1b87U=
 github.com/projectdiscovery/retryabledns v1.0.105 h1:G8ln01igkNTQ5xvMY5K4cx5XIfKGTwGH6aZxWxBKMqc=
 github.com/projectdiscovery/retryabledns v1.0.105/go.mod h1:3EZKhRL1rokqYR4q5qKK1eLBEe8mSzgtzkMOJilO1Ok=
 github.com/projectdiscovery/utils v0.4.23 h1:fi6AVPIh2laomWO+Yy6G8YhvM4c2fDmQ/Viio6VZgyw=
