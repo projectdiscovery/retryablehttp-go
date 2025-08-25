@@ -89,8 +89,8 @@ github.com/projectdiscovery/blackrock v0.0.1 h1:lHQqhaaEFjgf5WkuItbpeCZv2DUIE45k
 github.com/projectdiscovery/blackrock v0.0.1/go.mod h1:ANUtjDfaVrqB453bzToU+YB4cUbvBRpLvEwoWIwlTss=
 github.com/projectdiscovery/fastdialer v0.4.6 h1:7cw47IyrkVHCEM80dBDhjT4YNsPY2IAZD2Sg11QM0Wk=
 github.com/projectdiscovery/fastdialer v0.4.6/go.mod h1:IRbTB9d2GNT1EyxA16b/HJpqYbnNXk6hsH8CRZkdukc=
-github.com/projectdiscovery/hmap v0.0.92 h1:NHGDFVJzc7b8bDuIjss7SxX5LJla9py/RxC4lri+uBo=
-github.com/projectdiscovery/hmap v0.0.92/go.mod h1:IKezuOhPPwrmPusmhLuwuGsD8+fniyy6jx4gFTOZOnI=
+github.com/projectdiscovery/hmap v0.0.93 h1:iIRdioT4byGJ4Hz5cOjo1fd3HFFi1MUFPv+EGYc1yng=
+github.com/projectdiscovery/hmap v0.0.93/go.mod h1:oKgtWo2QMD7BkW25ezYbFCqKO3IctZ2ByEaG2XWW0t0=
 github.com/projectdiscovery/networkpolicy v0.1.20 h1:dPUk3FKoAehMnFvphAZLq6khDCbPYPJnD6PPTcjp5nU=
 github.com/projectdiscovery/networkpolicy v0.1.20/go.mod h1:laPi8mLbgCbYZ0kYQU4fkWCFQdFbx24ci7yBQA8Hcww=
 github.com/projectdiscovery/retryabledns v1.0.105 h1:G8ln01igkNTQ5xvMY5K4cx5XIfKGTwGH6aZxWxBKMqc=
