@@ -7,7 +7,7 @@ require (
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/projectdiscovery/fastdialer v0.4.7
 	github.com/projectdiscovery/utils v0.4.23
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	golang.org/x/net v0.39.0
 )
 
@@ -32,7 +32,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
 	github.com/projectdiscovery/hmap v0.0.93 // indirect
-	github.com/projectdiscovery/networkpolicy v0.1.22 // indirect
+	github.com/projectdiscovery/networkpolicy v0.1.23 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.106 // indirect
 	github.com/refraction-networking/utls v1.7.1 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
