@@ -28,8 +28,8 @@ github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDD
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
-github.com/gaissmai/bart v0.24.0 h1:HOq5aXDBa4d376KkuxD+xnS9DQWWJtD4zgDNoGV0KrQ=
-github.com/gaissmai/bart v0.24.0/go.mod h1:RpLtt3lWq1BoRz3AAyDAJ7jhLWBkYhVCfi+ximB2t68=
+github.com/gaissmai/bart v0.25.0 h1:eqiokVPqM3F94vJ0bTHXHtH91S8zkKL+bKh+BsGOsJM=
+github.com/gaissmai/bart v0.25.0/go.mod h1:GREWQfTLRWz/c5FTOsIw+KkscuFkIV5t8Rp7Nd1Td5c=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
@@ -91,8 +91,8 @@ github.com/projectdiscovery/fastdialer v0.4.10 h1:hbiB+1/xrlC3K5+dMIQgtyGB3tvnLt
 github.com/projectdiscovery/fastdialer v0.4.10/go.mod h1:i3dKsXReeOWAkmY27+aenewBZtHZHJCyIrw1oF8aTFQ=
 github.com/projectdiscovery/hmap v0.0.94 h1:Q2/89U2rkDVz59j/WBzaRPmpRrYamDWnzQgauk+K03E=
 github.com/projectdiscovery/hmap v0.0.94/go.mod h1:QtqZlGUwq3/SNiwEfArayfwrZU4g0/tpw6lJlxP1XEI=
-github.com/projectdiscovery/networkpolicy v0.1.24 h1:1EvBsUeKvuSVJpRR64Jf4T8852df/O7qXIFsKs/PU3o=
-github.com/projectdiscovery/networkpolicy v0.1.24/go.mod h1:DEktWhDxgsQ4hrvz00XQ0GPFSFkxsD6XBOOiVUKXGuo=
+github.com/projectdiscovery/networkpolicy v0.1.25 h1:2f3Nxp4ncz/95hm6PkIDLcjMJI6ei2YsgkQ29NZn7b0=
+github.com/projectdiscovery/networkpolicy v0.1.25/go.mod h1:6zQPoZRyGeNq0WvWnL5cbah3mCg9KJiOn5tgVQWGIn4=
 github.com/projectdiscovery/retryabledns v1.0.107 h1:Rd1JK7hfL68xRg3RzXmw9Q6B6WSNv9bdPhUoGvvebyg=
 github.com/projectdiscovery/retryabledns v1.0.107/go.mod h1:XddeOhDpwS0qR8/T4GXRGgDQsLhtRHw3TRdMsgJs28o=
 github.com/projectdiscovery/utils v0.5.0 h1:DN7mg2DpyObLByuObXzAFEkdNRDoPUnqE5N2szd3b3c=
