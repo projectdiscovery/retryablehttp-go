@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/projectdiscovery/fastdialer v0.4.12
+	github.com/projectdiscovery/fastdialer v0.4.13
 	github.com/projectdiscovery/utils v0.6.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/net v0.39.0
@@ -31,9 +31,9 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
-	github.com/projectdiscovery/hmap v0.0.94 // indirect
+	github.com/projectdiscovery/hmap v0.0.95 // indirect
 	github.com/projectdiscovery/networkpolicy v0.1.26 // indirect
-	github.com/projectdiscovery/retryabledns v1.0.107 // indirect
+	github.com/projectdiscovery/retryabledns v1.0.108 // indirect
 	github.com/refraction-networking/utls v1.7.1 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
