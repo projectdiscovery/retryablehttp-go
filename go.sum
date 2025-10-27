@@ -87,8 +87,8 @@ github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRI
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/projectdiscovery/blackrock v0.0.1 h1:lHQqhaaEFjgf5WkuItbpeCZv2DUIE45k0VbGJyft6LQ=
 github.com/projectdiscovery/blackrock v0.0.1/go.mod h1:ANUtjDfaVrqB453bzToU+YB4cUbvBRpLvEwoWIwlTss=
-github.com/projectdiscovery/fastdialer v0.4.13 h1:cxRHqGNBQffBDzBNTle0+4jfj57e+l7Q7bXqtf3lNPM=
-github.com/projectdiscovery/fastdialer v0.4.13/go.mod h1:V7g6xD3r0PXGWmiQUbUVBYeKusAXbpdePuEz1jGDeY8=
+github.com/projectdiscovery/fastdialer v0.4.14 h1:gvJGS+qzkAkuFx4CTgqFKpt1DGwoyu2X/X3BD/HqWww=
+github.com/projectdiscovery/fastdialer v0.4.14/go.mod h1:V7g6xD3r0PXGWmiQUbUVBYeKusAXbpdePuEz1jGDeY8=
 github.com/projectdiscovery/hmap v0.0.95 h1:OO6MCySlK2xMzvJmsYUwdaI7YWv/U437OtsN0Ovw72k=
 github.com/projectdiscovery/hmap v0.0.95/go.mod h1:KiTRdGd/GzX7uaoFWPrPBxPf4X/uZ9HTQ9dQ8x7x1bo=
 github.com/projectdiscovery/networkpolicy v0.1.27 h1:GsbvDIW3nPstAx8Beke6rtn95PhXnOcoXrnjcohn5Xk=
