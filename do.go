@@ -151,6 +151,7 @@ func (c *Client) closeIdleConnections() {
 		} else {
 			c.requestCounter.Store(0)
 			c.HTTPClient.CloseIdleConnections()
+			c.HTTPClient2.CloseIdleConnections()
 		}
 	}
 }
