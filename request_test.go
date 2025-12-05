@@ -3,6 +3,11 @@ package retryablehttp_test
 import (
 	"bufio"
 	"bytes"
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -67,6 +72,125 @@ func TestEncodedPaths(t *testing.T) {
 			t.Errorf("something went wrong expected `%v` in outgoing request but got-----\n%v\n------", v, string(bin))
 		}
 	}
+}
+
+func TestRedirectPOSTWithBody(t *testing.T) {
+	boundary := "----WebKitFormBoundaryx8jO2oVc6SWP3Sad"
+	bodyContent := fmt.Sprintf("--%s\r\nContent-Disposition: form-data; name=\"1\"\r\n\r\n\"$@0\"\r\n--%s--\r\n", boundary, boundary)
+
+	ts := setupRedirectServer(t, bodyContent)
+	defer ts.Close()
+
+	url := ts.URL + "/redirect"
+
+	// Test with retryablehttp
+	opts := retryablehttp.DefaultOptionsSpraying
+	client := retryablehttp.NewClient(opts)
+
+	req, err := retryablehttp.NewRequestWithContext(context.Background(), "POST", url, strings.NewReader(bodyContent))
+	if err != nil {
+		t.Fatalf("NewRequestWithContext failed: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "multipart/form-data; boundary="+boundary)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("client.Do failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Errorf("Expected status 200, got %d. Body: %s", resp.StatusCode, string(body))
+	}
+}
+
+func TestRedirectPOSTWithBodyFromRequest(t *testing.T) {
+	boundary := "----WebKitFormBoundaryx8jO2oVc6SWP3Sad"
+	bodyContent := fmt.Sprintf("--%s\r\nContent-Disposition: form-data; name=\"1\"\r\n\r\n\"$@0\"\r\n--%s--\r\n", boundary, boundary)
+
+	ts := setupRedirectServer(t, bodyContent)
+	defer ts.Close()
+
+	url := ts.URL + "/redirect"
+
+	// Test with retryablehttp
+	opts := retryablehttp.DefaultOptionsSpraying
+	client := retryablehttp.NewClient(opts)
+
+	// Use http.NewRequest then FromRequest
+	httpReq, err := http.NewRequest("POST", url, strings.NewReader(bodyContent))
+	if err != nil {
+		t.Fatalf("http.NewRequest failed: %v", err)
+	}
+	httpReq.Header.Set("Content-Type", "multipart/form-data; boundary="+boundary)
+
+	req, err := retryablehttp.FromRequest(httpReq)
+	if err != nil {
+		t.Fatalf("FromRequest failed: %v", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("client.Do failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Errorf("Expected status 200, got %d. Body: %s", resp.StatusCode, string(body))
+	}
+}
+
+func setupRedirectServer(t *testing.T, expectedBody string) *httptest.Server {
+	t.Helper()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/redirect", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+
+			return
+		}
+
+		_, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Logf("redirect read body err: %v", err)
+		}
+		r.Body.Close()
+
+		w.Header().Set("Location", "/target")
+		w.WriteHeader(http.StatusTemporaryRedirect) // 307
+	})
+
+	mux.HandleFunc("/target", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		r.Body.Close()
+
+		if len(body) == 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("empty body"))
+
+			return
+		}
+
+		if string(body) != expectedBody {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("body mismatch"))
+
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("success"))
+	})
+
+	return httptest.NewServer(mux)
 }
 
 func getPathFromRaw(bin []byte) (relpath string) {
