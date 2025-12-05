@@ -93,7 +93,7 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 // This function is not thread-safe; do not call it at the same time as another
 // call, or at the same time this request is being used with Client.Do.
 func (r *Request) BodyBytes() ([]byte, error) {
-	if r.Request.Body == nil {
+	if r.Body == nil {
 		return nil, nil
 	}
 	buf := new(bytes.Buffer)

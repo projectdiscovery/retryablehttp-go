@@ -98,7 +98,7 @@ func TestRedirectPOSTWithBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("client.Do failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -135,7 +135,7 @@ func TestRedirectPOSTWithBodyFromRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("client.Do failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -158,7 +158,7 @@ func setupRedirectServer(t *testing.T, expectedBody string) *httptest.Server {
 		if err != nil {
 			t.Logf("redirect read body err: %v", err)
 		}
-		r.Body.Close()
+		_ = r.Body.Close()
 
 		w.Header().Set("Location", "/target")
 		w.WriteHeader(http.StatusTemporaryRedirect) // 307
@@ -170,24 +170,24 @@ func setupRedirectServer(t *testing.T, expectedBody string) *httptest.Server {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		r.Body.Close()
+		_ = r.Body.Close()
 
 		if len(body) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("empty body"))
+			_, _ = w.Write([]byte("empty body"))
 
 			return
 		}
 
 		if string(body) != expectedBody {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("body mismatch"))
+			_, _ = w.Write([]byte("body mismatch"))
 
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		_, _ = w.Write([]byte("success"))
 	})
 
 	return httptest.NewServer(mux)

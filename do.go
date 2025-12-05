@@ -127,7 +127,7 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 	// By default, we close the response body and return an error without
 	// returning the response
 	if resp != nil {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 	c.closeIdleConnections()
 	return nil, fmt.Errorf("%s %s giving up after %d attempts: %w", req.Method, req.URL, retryMax+1, err)
@@ -139,7 +139,7 @@ func (c *Client) drainBody(req *Request, resp *http.Response) {
 	if err != nil {
 		req.Metrics.DrainErrors++
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 const closeConnectionsCounter = 100
@@ -248,5 +248,5 @@ func (c *Client) wrapContextWithTrace(req *Request) {
 	}
 	req.TraceInfo = traceInfo
 
-	req.Request = req.Request.WithContext(httptrace.WithClientTrace(req.Request.Context(), trace))
+	req.Request = req.Request.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 }
