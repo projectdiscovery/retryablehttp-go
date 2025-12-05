@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptrace"
 	"net/http/httputil"
@@ -197,6 +198,9 @@ func FromRequest(r *http.Request) (*Request, error) {
 		if err != nil {
 			return nil, err
 		}
+		r.GetBody = func() (io.ReadCloser, error) {
+			return body, nil
+		}
 	}
 
 	return &req, nil
@@ -259,6 +263,9 @@ func NewRequestFromURLWithContext(ctx context.Context, method string, urlx *urlu
 	if bodyReader != nil {
 		httpReq.ContentLength = contentLength
 		httpReq.Body = bodyReader
+		httpReq.GetBody = func() (io.ReadCloser, error) {
+			return bodyReader, nil
+		}
 	}
 
 	request := &Request{
