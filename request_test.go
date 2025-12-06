@@ -87,9 +87,47 @@ func TestRedirectPOSTWithBody(t *testing.T) {
 	opts := retryablehttp.DefaultOptionsSpraying
 	client := retryablehttp.NewClient(opts)
 
-	req, err := retryablehttp.NewRequestWithContext(context.Background(), "POST", url, strings.NewReader(bodyContent))
+	req, err := retryablehttp.NewRequestWithContext(context.Background(), "POST", url, nil)
 	if err != nil {
 		t.Fatalf("NewRequestWithContext failed: %v", err)
+	}
+	if err := req.SetBodyString(bodyContent); err != nil {
+		t.Fatalf("SetBodyString failed: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "multipart/form-data; boundary="+boundary)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("client.Do failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Errorf("Expected status 200, got %d. Body: %s", resp.StatusCode, string(body))
+	}
+}
+
+func TestRedirectPOSTWithBodyStream(t *testing.T) {
+	boundary := "----WebKitFormBoundaryx8jO2oVc6SWP3Sad"
+	bodyContent := fmt.Sprintf("--%s\r\nContent-Disposition: form-data; name=\"1\"\r\n\r\n\"$@0\"\r\n--%s--\r\n", boundary, boundary)
+
+	ts := setupRedirectServer(t, bodyContent)
+	defer ts.Close()
+
+	url := ts.URL + "/redirect"
+
+	// Test with retryablehttp
+	opts := retryablehttp.DefaultOptionsSpraying
+	client := retryablehttp.NewClient(opts)
+
+	req, err := retryablehttp.NewRequestWithContext(context.Background(), "POST", url, nil)
+	if err != nil {
+		t.Fatalf("NewRequestWithContext failed: %v", err)
+	}
+	if err := req.SetBodyStream(strings.NewReader(bodyContent), int64(len(bodyContent))); err != nil {
+		t.Fatalf("SetBodyStream failed: %v", err)
 	}
 
 	req.Header.Set("Content-Type", "multipart/form-data; boundary="+boundary)
@@ -141,6 +179,121 @@ func TestRedirectPOSTWithBodyFromRequest(t *testing.T) {
 		body, _ := io.ReadAll(resp.Body)
 		t.Errorf("Expected status 200, got %d. Body: %s", resp.StatusCode, string(body))
 	}
+}
+
+func TestSetBodyMethods(t *testing.T) {
+	// Test SetBody (bytes)
+	t.Run("SetBody", func(t *testing.T) {
+		req, err := retryablehttp.NewRequest("POST", "http://example.com", nil)
+		if err != nil {
+			t.Fatalf("NewRequest failed: %v", err)
+		}
+
+		body := []byte("hello world")
+		if err := req.SetBody(body); err != nil {
+			t.Fatalf("SetBody failed: %v", err)
+		}
+
+		if req.ContentLength != int64(len(body)) {
+			t.Errorf("Expected ContentLength %d, got %d", len(body), req.ContentLength)
+		}
+
+		// Verify GetBody works and returns fresh reader
+		verifyGetBody(t, req, body)
+	})
+
+	// Test SetBodyString
+	t.Run("SetBodyString", func(t *testing.T) {
+		req, err := retryablehttp.NewRequest("POST", "http://example.com", nil)
+		if err != nil {
+			t.Fatalf("NewRequest failed: %v", err)
+		}
+
+		body := "hello string"
+		if err := req.SetBodyString(body); err != nil {
+			t.Fatalf("SetBodyString failed: %v", err)
+		}
+
+		if req.ContentLength != int64(len(body)) {
+			t.Errorf("Expected ContentLength %d, got %d", len(body), req.ContentLength)
+		}
+
+		verifyGetBody(t, req, []byte(body))
+	})
+
+	// Test SetBodyStream with known size
+	t.Run("SetBodyStream_KnownSize", func(t *testing.T) {
+		req, err := retryablehttp.NewRequest("POST", "http://example.com", nil)
+		if err != nil {
+			t.Fatalf("NewRequest failed: %v", err)
+		}
+
+		data := "hello stream"
+		bodyStream := strings.NewReader(data)
+		size := int64(len(data))
+
+		if err := req.SetBodyStream(bodyStream, size); err != nil {
+			t.Fatalf("SetBodyStream failed: %v", err)
+		}
+
+		if req.ContentLength != size {
+			t.Errorf("Expected ContentLength %d, got %d", size, req.ContentLength)
+		}
+
+		verifyGetBody(t, req, []byte(data))
+	})
+
+	// Test SetBodyStream with unknown size (-1)
+	t.Run("SetBodyStream_UnknownSize", func(t *testing.T) {
+		req, err := retryablehttp.NewRequest("POST", "http://example.com", nil)
+		if err != nil {
+			t.Fatalf("NewRequest failed: %v", err)
+		}
+
+		data := "hello unknown stream"
+		bodyStream := strings.NewReader(data)
+
+		if err := req.SetBodyStream(bodyStream, -1); err != nil {
+			t.Fatalf("SetBodyStream failed: %v", err)
+		}
+
+		if req.ContentLength != int64(len(data)) {
+			t.Errorf("Expected ContentLength %d, got %d", len(data), req.ContentLength)
+		}
+
+		verifyGetBody(t, req, []byte(data))
+	})
+
+	// Test Nuclei Usage Scenario (Simulated)
+	// Nuclei creates a request with nil body, then sets it later using SetBodyString
+	t.Run("Nuclei_Scenario", func(t *testing.T) {
+		// 1. Create request with nil body (like Nuclei's generateHttpRequest)
+		ctx := context.Background()
+		req, err := retryablehttp.NewRequestWithContext(ctx, "POST", "http://example.com", nil)
+		if err != nil {
+			t.Fatalf("NewRequestWithContext failed: %v", err)
+		}
+
+		// 2. Simulate fillRequest logic where body is evaluated and set
+		evaluatedBody := "param1=value1&param2=value2"
+		if err := req.SetBodyString(evaluatedBody); err != nil {
+			t.Fatalf("SetBodyString failed: %v", err)
+		}
+
+		// 3. Verify everything is set correctly
+		if req.Body == nil {
+			t.Fatal("Body should not be nil")
+		}
+		if req.GetBody == nil {
+			t.Fatal("GetBody should not be nil")
+		}
+		if req.ContentLength != int64(len(evaluatedBody)) {
+			t.Errorf("Expected ContentLength %d, got %d", len(evaluatedBody), req.ContentLength)
+		}
+
+		// 4. Verify retry capability
+		verifyGetBody(t, req, []byte(evaluatedBody))
+	})
 }
 
 func setupRedirectServer(t *testing.T, expectedBody string) *httptest.Server {
@@ -208,4 +361,36 @@ readline:
 		}
 	}
 	goto readline
+}
+
+func verifyGetBody(t *testing.T, req *retryablehttp.Request, expected []byte) {
+	t.Helper()
+
+	if req.GetBody == nil {
+		t.Fatal("GetBody is nil")
+	}
+
+	// Read 1
+	rc1, err := req.GetBody()
+	if err != nil {
+		t.Fatalf("GetBody failed: %v", err)
+	}
+	data1, _ := io.ReadAll(rc1)
+	rc1.Close()
+
+	if !bytes.Equal(data1, expected) {
+		t.Errorf("Read 1 mismatch. Got %s, want %s", string(data1), string(expected))
+	}
+
+	// Read 2 (Retry simulation)
+	rc2, err := req.GetBody()
+	if err != nil {
+		t.Fatalf("GetBody failed 2nd time: %v", err)
+	}
+	data2, _ := io.ReadAll(rc2)
+	rc2.Close()
+
+	if !bytes.Equal(data2, expected) {
+		t.Errorf("Read 2 mismatch. Got %s, want %s", string(data2), string(expected))
+	}
 }

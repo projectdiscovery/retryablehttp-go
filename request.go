@@ -104,6 +104,96 @@ func (r *Request) BodyBytes() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// SetBodyReader sets the request body and populates GetBody for retries.
+//
+// The provided body MUST be reusable (e.g. created via
+// [readerutil.NewReusableReadCloser]).
+// If the body is not reusable, retries and 307/308 redirects will send an
+// empty body.
+//
+// This method does NOT set content length. The caller must set it manually.
+//
+// Prefer [SetBody], [SetBodyString], or [SetBodyStream] which handle
+// reusability and content length automatically.
+func (r *Request) SetBodyReader(body io.ReadCloser) {
+	r.Body = body
+	r.GetBody = func() (io.ReadCloser, error) {
+		return body, nil
+	}
+}
+
+// SetBody sets the request body from a byte slice.
+// It creates a reusable reader, sets content length, and populates GetBody for
+// retries.
+func (r *Request) SetBody(body []byte) error {
+	bodyReader, err := readerutil.NewReusableReadCloser(body)
+	if err != nil {
+		return err
+	}
+
+	r.Body = bodyReader
+	r.ContentLength = int64(len(body))
+	r.GetBody = func() (io.ReadCloser, error) {
+		return readerutil.NewReusableReadCloser(body)
+	}
+
+	return nil
+}
+
+// SetBodyString sets the request body from a string.
+// It creates a reusable reader, sets content length, and populates GetBody for
+// retries.
+func (r *Request) SetBodyString(body string) error {
+	return r.SetBody([]byte(body))
+}
+
+// SetBodyStream sets the request body from an [io.Reader].
+//
+// If bodySize is >= 0, it reads exactly that many bytes.
+// If bodySize < 0, it reads bodyStream until io.EOF.
+//
+// It creates a reusable reader, calculates and sets content length, and
+// populates GetBody for retries.
+//
+// If bodyStream implements [io.Closer], it is closed after the content is
+// read into the reusable reader.
+func (r *Request) SetBodyStream(bodyStream io.Reader, bodySize int64) error {
+	if closer, ok := bodyStream.(io.Closer); ok {
+		defer closer.Close()
+
+		// Wrap in NopCloser to prevent NewReusableReadCloser from closing it,
+		// since we are handling the close via defer.
+		bodyStream = io.NopCloser(bodyStream)
+	}
+
+	if bodySize >= 0 {
+		bodyStream = io.LimitReader(bodyStream, bodySize)
+	}
+
+	bodyReader, err := readerutil.NewReusableReadCloser(bodyStream)
+	if err != nil {
+		return err
+	}
+
+	r.SetBodyReader(bodyReader)
+
+	// If bodySize is provided, use it as ContentLength
+	if bodySize >= 0 {
+		r.ContentLength = bodySize
+		return nil
+	}
+
+	// Otherwise, calculate the length by reading the body
+	length, err := getLength(bodyReader)
+	if err == nil {
+		r.ContentLength = length
+	} else {
+		r.ContentLength = 0
+	}
+
+	return nil
+}
+
 // Update request URL with new changes of parameters if any
 func (r *Request) Update() {
 	// Make a copy of the URL to avoid data races
@@ -193,13 +283,10 @@ func FromRequest(r *http.Request) (*Request, error) {
 		if err != nil {
 			return nil, err
 		}
-		r.Body = body
+		req.SetBodyReader(body)
 		req.ContentLength, err = getLength(body)
 		if err != nil {
 			return nil, err
-		}
-		r.GetBody = func() (io.ReadCloser, error) {
-			return body, nil
 		}
 	}
 
@@ -256,22 +343,21 @@ func NewRequestFromURLWithContext(ctx context.Context, method string, urlx *urlu
 		return nil, err
 	}
 	urlx.Update()
+
 	httpReq.URL = urlx.URL
 	updateScheme(httpReq.URL)
-	// content-length and body should be assigned only
-	// if request has body
-	if bodyReader != nil {
-		httpReq.ContentLength = contentLength
-		httpReq.Body = bodyReader
-		httpReq.GetBody = func() (io.ReadCloser, error) {
-			return bodyReader, nil
-		}
-	}
 
 	request := &Request{
 		Request: httpReq,
 		URL:     urlx,
 		Metrics: Metrics{},
+	}
+
+	// content-length and body should be assigned only
+	// if request has body
+	if bodyReader != nil {
+		request.SetBodyReader(bodyReader)
+		request.ContentLength = contentLength
 	}
 
 	return request, nil
