@@ -404,6 +404,164 @@ func TestClientMessyEncoding_Do(t *testing.T) {
 	Discard(req, resp, options.RespReadLimit)
 }
 
+// TestWrapTransport tests that WrapTransport correctly wraps the underlying transport
+func TestWrapTransport(t *testing.T) {
+	// Track if our wrapper was called
+	wrapperCalled := false
+
+	options := Options{
+		RetryWaitMin: 10 * time.Millisecond,
+		RetryWaitMax: 50 * time.Millisecond,
+		RetryMax:     2,
+		WrapTransport: func(rt http.RoundTripper) http.RoundTripper {
+			wrapperCalled = true
+			return &testTransportWrapper{base: rt}
+		},
+	}
+
+	client := NewClient(options)
+	require.NotNil(t, client)
+	require.True(t, wrapperCalled, "WrapTransport function should have been called")
+
+	// Verify the transport was wrapped
+	_, isWrapped := client.HTTPClient.Transport.(*testTransportWrapper)
+	require.True(t, isWrapped, "HTTPClient.Transport should be wrapped")
+
+	_, isWrapped2 := client.HTTPClient2.Transport.(*testTransportWrapper)
+	require.True(t, isWrapped2, "HTTPClient2.Transport should be wrapped")
+}
+
+// TestWrapTransport_Request tests that wrapped transport is used during requests
+func TestWrapTransport_Request(t *testing.T) {
+	requestCount := 0
+
+	options := Options{
+		RetryWaitMin: 10 * time.Millisecond,
+		RetryWaitMax: 50 * time.Millisecond,
+		RetryMax:     2,
+		WrapTransport: func(rt http.RoundTripper) http.RoundTripper {
+			return &testTransportWrapper{
+				base: rt,
+				onRequest: func(req *http.Request) {
+					requestCount++
+				},
+			}
+		},
+	}
+
+	client := NewClient(options)
+
+	req, err := NewRequest("GET", "http://127.0.0.1:8080/foo", nil)
+	require.NoError(t, err)
+
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, 1, requestCount, "Wrapped transport should have been called once")
+}
+
+// TestWrapTransport_ModifyRequest tests that wrapped transport can modify requests
+func TestWrapTransport_ModifyRequest(t *testing.T) {
+	options := Options{
+		RetryWaitMin: 10 * time.Millisecond,
+		RetryWaitMax: 50 * time.Millisecond,
+		RetryMax:     2,
+		WrapTransport: func(rt http.RoundTripper) http.RoundTripper {
+			return &testTransportWrapper{
+				base: rt,
+				onRequest: func(req *http.Request) {
+					req.Header.Set("X-Custom-Header", "test-value")
+				},
+			}
+		},
+	}
+
+	client := NewClient(options)
+
+	req, err := NewRequest("GET", "http://127.0.0.1:8080/foo", nil)
+	require.NoError(t, err)
+
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	defer func() { _ = resp.Body.Close() }()
+
+	// Verify header was set (we can check the request after the fact)
+	require.Equal(t, "test-value", req.Header.Get("X-Custom-Header"))
+}
+
+// TestWrapTransport_Chain tests chaining multiple transport wrappers
+func TestWrapTransport_Chain(t *testing.T) {
+	var callOrder []string
+
+	options := Options{
+		RetryWaitMin: 10 * time.Millisecond,
+		RetryWaitMax: 50 * time.Millisecond,
+		RetryMax:     2,
+		WrapTransport: func(rt http.RoundTripper) http.RoundTripper {
+			// Inner wrapper (closer to network)
+			inner := &testTransportWrapper{
+				base: rt,
+				onRequest: func(req *http.Request) {
+					callOrder = append(callOrder, "inner")
+				},
+			}
+			// Outer wrapper
+			outer := &testTransportWrapper{
+				base: inner,
+				onRequest: func(req *http.Request) {
+					callOrder = append(callOrder, "outer")
+				},
+			}
+			return outer
+		},
+	}
+
+	client := NewClient(options)
+
+	req, err := NewRequest("GET", "http://127.0.0.1:8080/foo", nil)
+	require.NoError(t, err)
+
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, []string{"outer", "inner"}, callOrder, "Wrappers should be called in order: outer -> inner")
+}
+
+// TestWrapTransport_Nil tests that nil WrapTransport is handled correctly
+func TestWrapTransport_Nil(t *testing.T) {
+	options := Options{
+		RetryWaitMin:  10 * time.Millisecond,
+		RetryWaitMax:  50 * time.Millisecond,
+		RetryMax:      2,
+		WrapTransport: nil,
+	}
+
+	client := NewClient(options)
+	require.NotNil(t, client)
+
+	// Should use default transport
+	_, isDefault := client.HTTPClient.Transport.(*http.Transport)
+	require.True(t, isDefault, "Should use default http.Transport when WrapTransport is nil")
+}
+
+// testTransportWrapper is a test helper that wraps an http.RoundTripper
+type testTransportWrapper struct {
+	base      http.RoundTripper
+	onRequest func(*http.Request)
+}
+
+func (t *testTransportWrapper) RoundTrip(req *http.Request) (*http.Response, error) {
+	if t.onRequest != nil {
+		t.onRequest(req)
+	}
+	return t.base.RoundTrip(req)
+}
+
 func TestMain(m *testing.M) {
 	// start buggyhttp
 	buggyhttp.Listen(8080)

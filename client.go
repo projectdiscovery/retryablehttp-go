@@ -61,6 +61,11 @@ type Options struct {
 	NoAdjustTimeout bool
 	// Custom http client
 	HttpClient *http.Client
+	// WrapTransport wraps the underlying [http.RoundTripper].
+	// The function receives the default transport (with fastdialer, TLS config)
+	// and should return the transport to use.
+	// Applied to both HTTP/1.1 and HTTP/2 clients.
+	WrapTransport func(http.RoundTripper) http.RoundTripper
 	// Trace enables tracing of the HTTP request
 	Trace bool
 	// TLSSessionCacheSize specifies the size of the TLS session cache.
@@ -114,6 +119,12 @@ func NewClient(options Options) *Client {
 	if options.HttpClient == nil && options.TLSSessionCacheSize > 0 {
 		applyTLSSessionCache(httpclient, options.TLSSessionCacheSize)
 		applyTLSSessionCache(httpclient2, options.TLSSessionCacheSize)
+	}
+
+	// Apply transport wrapper if provided
+	if options.WrapTransport != nil {
+		httpclient.Transport = options.WrapTransport(httpclient.Transport)
+		httpclient2.Transport = options.WrapTransport(httpclient2.Transport)
 	}
 
 	var retryPolicy CheckRetry
