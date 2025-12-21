@@ -67,7 +67,7 @@ func messyEncoding(w http.ResponseWriter, req *http.Request) {
 	}
 
 	for _, oneencodingfrommany := range soManyEncodings {
-		fmt.Fprint(w, oneencodingfrommany)
+		_, _ = fmt.Fprint(w, oneencodingfrommany)
 	}
 }
 
@@ -77,7 +77,7 @@ func superSlow(w http.ResponseWriter, req *http.Request) {
 	z := w.(http.Flusher)
 	for name, headers := range req.Header {
 		for _, h := range headers {
-			fmt.Fprintf(w, "%v: %v\n", name, h)
+			_, _ = fmt.Fprintf(w, "%v: %v\n", name, h)
 			z.Flush()
 			time.Sleep(250 * time.Millisecond)
 		}
@@ -98,7 +98,9 @@ func superSlow(w http.ResponseWriter, req *http.Request) {
 func emptyResponse(w http.ResponseWriter, req *http.Request) {
 	hj, _ := w.(http.Hijacker)
 	conn, _, _ := hj.Hijack()
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 }
 
 // SO MANY REDIRECTS
@@ -111,7 +113,9 @@ func infiniteRedirects(w http.ResponseWriter, req *http.Request) {
 func unexpectedEOF(w http.ResponseWriter, req *http.Request) {
 	hj, _ := w.(http.Hijacker)
 	conn, bufrw, _ := hj.Hijack()
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	// reply with bogus data - this should either crash the client or trigger a recoverable error on
 	// default retryablehttp requests
 	_, _ = bufrw.WriteString("HTTP/1.1 200 OK\n" +
@@ -121,18 +125,18 @@ func unexpectedEOF(w http.ResponseWriter, req *http.Request) {
 	// "Content-Length: -124" +
 	// "Content-Type: whatzdacontenttype" +
 	// "Connection: drunk")
-	bufrw.Flush()
+	_ = bufrw.Flush()
 }
 
 // Simulate normal 200 answer with body
 func foo(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "foo")
+	_, _ = fmt.Fprintf(w, "foo")
 }
 
 // generates recoverable errors until SuccessAfter attempts => after it 200 + body
 var count int // as of now a local horrible variable suffice
 func successAfter(w http.ResponseWriter, req *http.Request) {
-	var successAfter int = defaultSuccessAfterThreshold
+	successAfter := defaultSuccessAfterThreshold
 	if req.FormValue("successAfter") != "" {
 		if i, err := strconv.Atoi(req.FormValue("successAfter")); err == nil {
 			successAfter = i
@@ -143,7 +147,9 @@ func successAfter(w http.ResponseWriter, req *http.Request) {
 	if count <= successAfter {
 		hj, _ := w.(http.Hijacker)
 		conn, bufrw, _ := hj.Hijack()
-		defer conn.Close()
+		defer func() {
+			_ = conn.Close()
+		}()
 		// reply with bogus data - this should either crash the client or trigger a recoverable error on
 		// default retryablehttp requests
 		_, _ = bufrw.WriteString("HHHTTP\\1,.1 -500 MAYBEOK\n" +
@@ -153,16 +159,14 @@ func successAfter(w http.ResponseWriter, req *http.Request) {
 			"Content-Length: -124\n" +
 			"Content-Type: whatzdacontenttype\n" +
 			"Connection: drunk")
-		bufrw.Flush()
+		_ = bufrw.Flush()
 		return
 	}
 
 	// zeroes attempts and return 200 + valid body
 	count = 0
-	fmt.Fprintf(w, "foo")
+	_, _ = fmt.Fprintf(w, "foo")
 }
-
-
 
 var (
 	server    *http.Server

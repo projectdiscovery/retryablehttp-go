@@ -376,7 +376,7 @@ func verifyGetBody(t *testing.T, req *retryablehttp.Request, expected []byte) {
 		t.Fatalf("GetBody failed: %v", err)
 	}
 	data1, _ := io.ReadAll(rc1)
-	rc1.Close()
+	_ = rc1.Close()
 
 	if !bytes.Equal(data1, expected) {
 		t.Errorf("Read 1 mismatch. Got %s, want %s", string(data1), string(expected))
@@ -388,7 +388,7 @@ func verifyGetBody(t *testing.T, req *retryablehttp.Request, expected []byte) {
 		t.Fatalf("GetBody failed 2nd time: %v", err)
 	}
 	data2, _ := io.ReadAll(rc2)
-	rc2.Close()
+	_ = rc2.Close()
 
 	if !bytes.Equal(data2, expected) {
 		t.Errorf("Read 2 mismatch. Got %s, want %s", string(data2), string(expected))
