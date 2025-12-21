@@ -45,7 +45,7 @@ func main() {
 
 	router := httprouter.New()
 	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		fmt.Fprintf(w, "this is a test")
+		_, _ = fmt.Fprintf(w, "this is a test")
 	})
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -63,8 +63,8 @@ func main() {
 					log.Println(err)
 					continue
 				}
-				io.Copy(io.Discard, resp.Body)
-				resp.Body.Close()
+				_, _ = io.Copy(io.Discard, resp.Body)
+				_ = resp.Body.Close()
 			}
 		}()
 	}

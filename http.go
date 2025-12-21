@@ -41,6 +41,7 @@ func DefaultReusePooledTransport() *http.Transport {
 		MaxIdleConnsPerHost:    100,
 		MaxResponseHeaderBytes: 4096, // net/http default is 10Mb
 		TLSClientConfig: &tls.Config{
+			ClientSessionCache: tls.NewLRUClientSessionCache(1024),
 			Renegotiation:      tls.RenegotiateOnceAsClient, // Renegotiation is not supported in TLS 1.3 as per docs
 			InsecureSkipVerify: true,
 			MinVersion:         tls.VersionTLS10,
@@ -73,6 +74,19 @@ func DefaultClient() *http.Client {
 func DefaultPooledClient() *http.Client {
 	return &http.Client{
 		Transport: DefaultReusePooledTransport(),
+	}
+}
+
+// applyTLSSessionCache configures the TLS session cache size for an
+// [http.Client].
+//
+// It only applies if the client has an [http.Transport] with a
+// TLSClientConfig.
+func applyTLSSessionCache(client *http.Client, size int) {
+	if transport, ok := client.Transport.(*http.Transport); ok {
+		if transport.TLSClientConfig != nil {
+			transport.TLSClientConfig.ClientSessionCache = tls.NewLRUClientSessionCache(size)
+		}
 	}
 }
 

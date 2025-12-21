@@ -159,7 +159,9 @@ func (r *Request) SetBodyString(body string) error {
 // read into the reusable reader.
 func (r *Request) SetBodyStream(bodyStream io.Reader, bodySize int64) error {
 	if closer, ok := bodyStream.(io.Closer); ok {
-		defer closer.Close()
+		defer func() {
+			_ = closer.Close()
+		}()
 
 		// Wrap in NopCloser to prevent NewReusableReadCloser from closing it,
 		// since we are handling the close via defer.
