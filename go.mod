@@ -31,7 +31,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
-	github.com/projectdiscovery/hmap v0.0.98 // indirect
+	github.com/projectdiscovery/hmap v0.0.99 // indirect
 	github.com/projectdiscovery/networkpolicy v0.1.33 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.111 // indirect
 	github.com/refraction-networking/utls v1.7.1 // indirect
