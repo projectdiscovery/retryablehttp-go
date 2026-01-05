@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/projectdiscovery/fastdialer v0.5.1
+	github.com/projectdiscovery/fastdialer v0.5.2
 	github.com/projectdiscovery/utils v0.8.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/net v0.47.0
