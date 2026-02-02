@@ -60,7 +60,8 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 		checkOK, checkErr := c.CheckRetry(req.Context(), resp, err)
 
 		// if err is equal to missing minor protocol version retry with http/2
-		if err != nil && stringsutil.ContainsAny(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"", "net/http: HTTP/1.x transport connection broken: malformed HTTP response") {
+		// Only attempt HTTP/2 fallback if HTTP/2 is not explicitly disabled
+		if !c.options.DisableHTTP2 && c.HTTPClient2 != nil && err != nil && stringsutil.ContainsAny(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"", "net/http: HTTP/1.x transport connection broken: malformed HTTP response") {
 			resp, err = c.HTTPClient2.Do(req.Request)
 			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
 		}
@@ -151,7 +152,9 @@ func (c *Client) closeIdleConnections() {
 		} else {
 			c.requestCounter.Store(0)
 			c.HTTPClient.CloseIdleConnections()
-			c.HTTPClient2.CloseIdleConnections()
+			if c.HTTPClient2 != nil {
+				c.HTTPClient2.CloseIdleConnections()
+			}
 		}
 	}
 }
@@ -247,6 +250,5 @@ func (c *Client) wrapContextWithTrace(req *Request) {
 		},
 	}
 	req.TraceInfo = traceInfo
-
 	req.Request = req.Request.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 }
