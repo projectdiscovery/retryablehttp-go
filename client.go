@@ -72,6 +72,10 @@ type Options struct {
 	//
 	// If less than or equal to zero, defaults to 1024.
 	TLSSessionCacheSize int
+	// DisableHTTP2 disables HTTP/2 support and prevents automatic fallback
+	// to HTTP/2 when HTTP/1.x errors occur. When true, the client will only
+	// use HTTP/1.1 even if the server supports HTTP/2.
+	DisableHTTP2 bool
 }
 
 // DefaultOptionsSpraying contains the default options for host spraying
@@ -111,20 +115,36 @@ func NewClient(options Options) *Client {
 		httpclient = DefaultPooledClient()
 	}
 
-	httpclient2 := DefaultClient()
-	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
-		return nil
+	var httpclient2 *http.Client
+	// Only create HTTP/2 client if not explicitly disabled
+	if !options.DisableHTTP2 {
+		httpclient2 = DefaultClient()
+		if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
+			return nil
+		}
+
+		if options.HttpClient == nil && options.TLSSessionCacheSize > 0 {
+			applyTLSSessionCache(httpclient2, options.TLSSessionCacheSize)
+		}
+
+		// Apply transport wrapper if provided
+		if options.WrapTransport != nil {
+			httpclient2.Transport = options.WrapTransport(httpclient2.Transport)
+		}
+
+		// add timeout to http2 client
+		if options.Timeout > 0 {
+			httpclient2.Timeout = options.Timeout
+		}
 	}
 
 	if options.HttpClient == nil && options.TLSSessionCacheSize > 0 {
 		applyTLSSessionCache(httpclient, options.TLSSessionCacheSize)
-		applyTLSSessionCache(httpclient2, options.TLSSessionCacheSize)
 	}
 
 	// Apply transport wrapper if provided
 	if options.WrapTransport != nil {
 		httpclient.Transport = options.WrapTransport(httpclient.Transport)
-		httpclient2.Transport = options.WrapTransport(httpclient2.Transport)
 	}
 
 	var retryPolicy CheckRetry
@@ -143,7 +163,6 @@ func NewClient(options Options) *Client {
 	// add timeout to clients
 	if options.Timeout > 0 {
 		httpclient.Timeout = options.Timeout
-		httpclient2.Timeout = options.Timeout
 	}
 
 	// if necessary adjusts per-request timeout proportionally to general timeout (30%)
