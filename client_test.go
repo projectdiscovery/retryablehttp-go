@@ -2,8 +2,11 @@ package retryablehttp
 
 import (
 	"bytes"
+	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -560,6 +563,205 @@ func (t *testTransportWrapper) RoundTrip(req *http.Request) (*http.Response, err
 		t.onRequest(req)
 	}
 	return t.base.RoundTrip(req)
+}
+
+// mockHTTP2ErrorTransport is a transport that returns HTTP/2 related errors
+// to simulate scenarios where HTTP/1.x transport receives HTTP/2 responses
+type mockHTTP2ErrorTransport struct {
+	called bool
+}
+
+func (t *mockHTTP2ErrorTransport) RoundTrip(_ *http.Request) (*http.Response, error) {
+	t.called = true
+	return nil, fmt.Errorf("net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"")
+}
+
+// mockSuccessTransport is a transport that returns successful responses
+// used to track if HTTPClient2 is being called
+type mockSuccessTransport struct {
+	called bool
+}
+
+func (t *mockSuccessTransport) RoundTrip(_ *http.Request) (*http.Response, error) {
+	t.called = true
+	return &http.Response{
+		StatusCode: 200,
+		Body:       io.NopCloser(strings.NewReader("ok")),
+	}, nil
+}
+
+// TestClient_HTTP2Fallback_Disabled tests that when HTTP/2 is explicitly disabled,
+// the client does not fall back to HTTPClient2 on HTTP/2-related errors
+func TestClient_HTTP2Fallback_Disabled(t *testing.T) {
+	t.Run("TLSNextProto_Empty_Map", func(t *testing.T) {
+		// Create a transport with TLSNextProto set to empty map (standard way to disable HTTP/2)
+		// We use a custom DialContext to intercept requests and return our mock error
+		mockCalled := false
+		transport := &http.Transport{
+			TLSNextProto: map[string]func(authority string, c *tls.Conn) http.RoundTripper{}, // Disable HTTP/2
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				mockCalled = true
+				// Return an error that simulates the HTTP/2 version mismatch
+				return nil, fmt.Errorf("net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"")
+			},
+		}
+
+		httpClient := &http.Client{
+			Transport: transport,
+		}
+
+		options := Options{
+			RetryWaitMin: 10 * time.Millisecond,
+			RetryWaitMax: 50 * time.Millisecond,
+			RetryMax:     0, // No retries to simplify test
+			Timeout:      5 * time.Second,
+			HttpClient:   httpClient,
+		}
+
+		client := NewClient(options)
+		require.NotNil(t, client)
+
+		// Verify that isHTTP2Disabled correctly detects disabled HTTP/2
+		require.True(t, client.isHTTP2Disabled(), "isHTTP2Disabled should return true when TLSNextProto is empty map")
+
+		// Replace HTTPClient2's transport with a mock to track if it's called
+		mockHTTP2Transport := &mockSuccessTransport{}
+		client.HTTPClient2.Transport = mockHTTP2Transport
+
+		// Create a request
+		req, err := NewRequest("GET", "http://example.com/test", nil)
+		require.NoError(t, err)
+
+		// Make the request - should fail with the original error, NOT fallback to HTTP/2
+		resp, err := client.Do(req)
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+
+		// Verify the original transport was called
+		require.True(t, mockCalled, "Original transport should have been called")
+
+		// Verify HTTPClient2 was NOT called since HTTP/2 is disabled
+		require.False(t, mockHTTP2Transport.called, "HTTPClient2 should NOT be called when HTTP/2 is disabled via TLSNextProto")
+
+		// Verify we got an error (the original error, not a successful response from HTTPClient2)
+		require.Error(t, err, "Should return error when HTTP/2 is disabled and original request fails")
+		require.Contains(t, err.Error(), "malformed HTTP version", "Error should be the original HTTP/2 malformed error")
+	})
+
+	t.Run("GODEBUG_http2client_disabled", func(t *testing.T) {
+		// Save and restore GODEBUG
+		originalGodebug := os.Getenv("GODEBUG")
+		err := os.Setenv("GODEBUG", "http2client=0")
+		require.NoError(t, err)
+		defer func() {
+			if originalGodebug == "" {
+				_ = os.Unsetenv("GODEBUG")
+			} else {
+				_ = os.Setenv("GODEBUG", originalGodebug)
+			}
+		}()
+
+		// Create a client with mock transports
+		mockTransport := &mockHTTP2ErrorTransport{}
+
+		httpClient := &http.Client{
+			Transport: mockTransport,
+		}
+
+		options := Options{
+			RetryWaitMin: 10 * time.Millisecond,
+			RetryWaitMax: 50 * time.Millisecond,
+			RetryMax:     0, // No retries to simplify test
+			Timeout:      5 * time.Second,
+			HttpClient:   httpClient,
+		}
+
+		client := NewClient(options)
+		require.NotNil(t, client)
+
+		// Verify that isHTTP2Disabled correctly detects disabled HTTP/2 via GODEBUG
+		require.True(t, client.isHTTP2Disabled(), "isHTTP2Disabled should return true when GODEBUG=http2client=0")
+
+		// Replace HTTPClient2's transport with a mock to track if it's called
+		mockHTTP2Transport := &mockSuccessTransport{}
+		client.HTTPClient2.Transport = mockHTTP2Transport
+
+		// Create a request
+		req, err := NewRequest("GET", "http://example.com/test", nil)
+		require.NoError(t, err)
+
+		// Make the request - should fail with the original error, NOT fallback to HTTP/2
+		resp, err := client.Do(req)
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+
+		// Verify the original transport was called
+		require.True(t, mockTransport.called, "Original transport should have been called")
+
+		// Verify HTTPClient2 was NOT called since GODEBUG disables HTTP/2
+		require.False(t, mockHTTP2Transport.called, "HTTPClient2 should NOT be called when HTTP/2 is disabled via GODEBUG")
+
+		// Verify we got an error
+		require.Error(t, err, "Should return error when HTTP/2 is disabled via GODEBUG and original request fails")
+		require.Contains(t, err.Error(), "malformed HTTP version", "Error should be the original HTTP/2 malformed error")
+	})
+
+	t.Run("HTTP2_Enabled_Should_Fallback", func(t *testing.T) {
+		// Ensure GODEBUG is not set to disable HTTP/2
+		originalGodebug := os.Getenv("GODEBUG")
+		_ = os.Unsetenv("GODEBUG")
+		defer func() {
+			if originalGodebug != "" {
+				_ = os.Setenv("GODEBUG", originalGodebug)
+			}
+		}()
+
+		// Create a client WITHOUT HTTP/2 disabled - should fall back to HTTPClient2
+		mockTransport := &mockHTTP2ErrorTransport{}
+
+		httpClient := &http.Client{
+			Transport: mockTransport,
+		}
+
+		options := Options{
+			RetryWaitMin: 10 * time.Millisecond,
+			RetryWaitMax: 50 * time.Millisecond,
+			RetryMax:     0, // No retries to simplify test
+			Timeout:      5 * time.Second,
+			HttpClient:   httpClient,
+		}
+
+		client := NewClient(options)
+		require.NotNil(t, client)
+
+		// Verify that isHTTP2Disabled returns false when HTTP/2 is not disabled
+		require.False(t, client.isHTTP2Disabled(), "isHTTP2Disabled should return false when HTTP/2 is not disabled")
+
+		// Replace HTTPClient2's transport with a mock that returns success
+		mockHTTP2Transport := &mockSuccessTransport{}
+		client.HTTPClient2.Transport = mockHTTP2Transport
+
+		// Create a request
+		req, err := NewRequest("GET", "http://example.com/test", nil)
+		require.NoError(t, err)
+
+		// Make the request - should fallback to HTTP/2 and succeed
+		resp, err := client.Do(req)
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+
+		// Verify the original transport was called
+		require.True(t, mockTransport.called, "Original transport should have been called")
+
+		// Verify HTTPClient2 WAS called as fallback since HTTP/2 is NOT disabled
+		require.True(t, mockHTTP2Transport.called, "HTTPClient2 SHOULD be called when HTTP/2 is enabled and HTTP/1.x fails with HTTP/2 error")
+
+		// Should succeed via HTTPClient2
+		require.NoError(t, err, "Should succeed via HTTPClient2 fallback when HTTP/2 is enabled")
+	})
 }
 
 func TestMain(m *testing.M) {
