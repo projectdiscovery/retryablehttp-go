@@ -2,6 +2,8 @@ package retryablehttp
 
 import (
 	"net/http"
+	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -179,4 +181,41 @@ func (c *Client) setKillIdleConnections() {
 			c.options.KillIdleConn = b.DisableKeepAlives || b.MaxConnsPerHost < 0
 		}
 	}
+}
+
+// isHTTP2Disabled checks if HTTP/2 has been explicitly disabled on the client.
+// HTTP/2 can be disabled in the following ways:
+//  1. Setting TLSNextProto to an empty map on the Transport
+//  2. Setting GODEBUG=http2client=0 environment variable
+//  3. Setting ForceAttemptHTTP2 to false on the Transport (Go 1.13+)
+func (c *Client) isHTTP2Disabled() bool {
+	// Check GODEBUG environment variable for http2client=0
+	if godebug := os.Getenv("GODEBUG"); godebug != "" {
+		if strings.Contains(godebug, "http2client=0") {
+			return true
+		}
+	}
+
+	if c.HTTPClient == nil {
+		return false
+	}
+
+	transport, ok := c.HTTPClient.Transport.(*http.Transport)
+	if !ok {
+		return false
+	}
+
+	// Check if TLSNextProto is set to an empty map (standard way to disable HTTP/2)
+	if transport.TLSNextProto != nil && len(transport.TLSNextProto) == 0 {
+		return true
+	}
+
+	// Check if ForceAttemptHTTP2 is explicitly set to false
+	// Note: ForceAttemptHTTP2 being false doesn't always mean HTTP/2 is disabled,
+	// but combined with TLSNextProto check, this provides additional safety
+	if !transport.ForceAttemptHTTP2 && transport.TLSNextProto != nil {
+		return true
+	}
+
+	return false
 }
