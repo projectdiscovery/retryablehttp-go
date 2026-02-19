@@ -59,6 +59,10 @@ type Options struct {
 	Backoff Backoff
 	// NoAdjustTimeout disables automatic adjustment of HTTP request timeout
 	NoAdjustTimeout bool
+	// DisableHTTP2Fallback disables automatic fallback to HTTP/2 when HTTP/1.x
+	// transport encounters malformed HTTP version errors. This should be set
+	// when the caller explicitly wants HTTP/1.1 only.
+	DisableHTTP2Fallback bool
 	// Custom http client
 	HttpClient *http.Client
 	// WrapTransport wraps the underlying [http.RoundTripper].
