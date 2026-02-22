@@ -68,6 +68,12 @@ type Options struct {
 	WrapTransport func(http.RoundTripper) http.RoundTripper
 	// Trace enables tracing of the HTTP request
 	Trace bool
+	// DisableHTTPFallback disables the internal HTTP/2 fallback client used when
+	// the HTTP/1.x transport errors on malformed HTTP/2 responses.
+	//
+	// This is useful when callers explicitly force HTTP/1.1-only behavior and
+	// want to avoid unintended protocol switching and divergent client settings.
+	DisableHTTPFallback bool
 	// TLSSessionCacheSize specifies the size of the TLS session cache.
 	//
 	// If less than or equal to zero, defaults to 1024.
@@ -111,9 +117,16 @@ func NewClient(options Options) *Client {
 		httpclient = DefaultPooledClient()
 	}
 
-	httpclient2 := DefaultClient()
-	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
-		return nil
+	// httpclient2 is used for native http2 fallback on malformed HTTP/2 responses.
+	// When disabled, reuse the main client to preserve explicit protocol settings.
+	var httpclient2 *http.Client
+	if options.DisableHTTPFallback {
+		httpclient2 = httpclient
+	} else {
+		httpclient2 = DefaultClient()
+		if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
+			return nil
+		}
 	}
 
 	if options.HttpClient == nil && options.TLSSessionCacheSize > 0 {
