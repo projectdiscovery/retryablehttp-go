@@ -147,6 +147,10 @@ func NewClient(options Options) *Client {
 		httpclient2.Timeout = options.Timeout
 	}
 
+	if isHTTP2Disabled(options.HttpClient) {
+		httpclient2 = nil
+	}
+
 	// if necessary adjusts per-request timeout proportionally to general timeout (30%)
 	if options.Timeout > time.Second*15 && options.RetryMax > 1 && !options.NoAdjustTimeout {
 		httpclient.Timeout = time.Duration(options.Timeout.Seconds()*0.3) * time.Second
@@ -180,4 +184,18 @@ func (c *Client) setKillIdleConnections() {
 			c.options.KillIdleConn = b.DisableKeepAlives || b.MaxConnsPerHost < 0
 		}
 	}
+}
+
+// isHTTP2Disabled checks whether the given client has explicitly disabled
+// HTTP/2 via TLSNextProto. A non-nil empty map signals that protocol
+// upgrades are intentionally turned off (Go standard convention).
+func isHTTP2Disabled(client *http.Client) bool {
+	if client == nil {
+		return false
+	}
+	t, ok := client.Transport.(*http.Transport)
+	if !ok {
+		return false
+	}
+	return t.TLSNextProto != nil && len(t.TLSNextProto) == 0
 }
