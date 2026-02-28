@@ -112,6 +112,7 @@ func NewClient(options Options) *Client {
 	}
 
 	httpclient2 := DefaultClient()
+	httpclient2.Transport.(*http.Transport).DialTLSContext = nil
 	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
 		return nil
 	}
