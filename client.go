@@ -34,6 +34,7 @@ type Client struct {
 	Backoff Backoff
 
 	options Options
+        DisableHTTPFallback bool
 }
 
 // Options contains configuration options for the client
