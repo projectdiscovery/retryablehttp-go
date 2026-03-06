@@ -60,7 +60,9 @@ func (c *Client) Do(req *Request) (*http.Response, error) {
 		checkOK, checkErr := c.CheckRetry(req.Context(), resp, err)
 
 		// if err is equal to missing minor protocol version retry with http/2
-		if err != nil && stringsutil.ContainsAny(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"", "net/http: HTTP/1.x transport connection broken: malformed HTTP response") {
+		// unless DisableHTTP2Fallback is set (e.g. when caller explicitly
+		// requires HTTP/1.1-only communication via -pr http11)
+		if err != nil && !c.options.DisableHTTP2Fallback && stringsutil.ContainsAny(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"", "net/http: HTTP/1.x transport connection broken: malformed HTTP response") {
 			resp, err = c.HTTPClient2.Do(req.Request)
 			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
 		}
