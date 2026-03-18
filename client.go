@@ -72,6 +72,10 @@ type Options struct {
 	//
 	// If less than or equal to zero, defaults to 1024.
 	TLSSessionCacheSize int
+	// DisableHTTP2 disables the HTTP/2 fallback mechanism. When enabled,
+	// the client will not fall back to HTTP/2 upon receiving a malformed
+	// HTTP version error from an HTTP/1.x transport connection.
+	DisableHTTP2 bool
 }
 
 // DefaultOptionsSpraying contains the default options for host spraying
