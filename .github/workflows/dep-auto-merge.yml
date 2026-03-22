@@ -1,26 +1,20 @@
-name: 🤖 dep auto merge
+name: 🔀 Auto merge PR
 
 on:
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["🔨 Build Test"]
+    types: [completed]
 
 permissions:
+  contents: write
   pull-requests: write
-  issues: write
-  repository-projects: write
 
 jobs:
-  automerge:
+  auto-merge-dependabot:
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: projectdiscovery/actions/pr/approve@v1
+      - uses: projectdiscovery/actions/pr/merge@v1
         with:
-          token: ${{ secrets.DEPENDABOT_PAT }}
-
-      - uses: ahmadnassri/action-dependabot-auto-merge@v2
-        with:
-          github-token: ${{ secrets.DEPENDABOT_PAT }}
-          target: all
+          auto: "true"
