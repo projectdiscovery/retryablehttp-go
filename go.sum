@@ -29,8 +29,8 @@ github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDD
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
-github.com/gaissmai/bart v0.26.1 h1:+w4rnLGNlA2GDVn382Tfe3jOsK5vOr5n4KmigJ9lbTo=
-github.com/gaissmai/bart v0.26.1/go.mod h1:GREWQfTLRWz/c5FTOsIw+KkscuFkIV5t8Rp7Nd1Td5c=
+github.com/gaissmai/bart v0.27.1 h1:FysPzqETMJa8q9rNkLW5peT1hq25nLOz8ksHbSVoiAk=
+github.com/gaissmai/bart v0.27.1/go.mod h1:GREWQfTLRWz/c5FTOsIw+KkscuFkIV5t8Rp7Nd1Td5c=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
@@ -91,8 +91,8 @@ github.com/projectdiscovery/fastdialer v0.5.7 h1:Esf/ACWzEy+8EB0L4/8T6/2XID46gW6
 github.com/projectdiscovery/fastdialer v0.5.7/go.mod h1:hVQnaddbjVb7wkizhq/0K2f6PnO6DgKNZHFk+/cB2AI=
 github.com/projectdiscovery/hmap v0.0.101 h1:zXM6YtLmsn8Q0CUUw8QavhqWmiQYwaw+/U679Rr00pc=
 github.com/projectdiscovery/hmap v0.0.101/go.mod h1:w6N9/a5H8kvyx53AhtPDUWe5Qq3D6NBDPA23glHpa/Q=
-github.com/projectdiscovery/networkpolicy v0.1.38 h1:q1cQ0diccVfvXvVcRBsm9Q4BcO2rx62F3LMyMW9wThQ=
-github.com/projectdiscovery/networkpolicy v0.1.38/go.mod h1:BIuDC/DLbWugwT18QI8KwZqaJWuKwF4DGOSNl+hBQOw=
+github.com/projectdiscovery/networkpolicy v0.1.39 h1:DhL9niYa/x/psaN74LihwPD/Lu3FBBx2DPzCA0e96e8=
+github.com/projectdiscovery/networkpolicy v0.1.39/go.mod h1:u1dKMIfC8FmFcFzkxlk079xFIFKVLBwC81xLg8FQERM=
 github.com/projectdiscovery/retryabledns v1.0.114 h1:COyNKzhA7oa3C/1639WRXeXsKrUJx06paVbN64IHZ3E=
 github.com/projectdiscovery/retryabledns v1.0.114/go.mod h1:+DyanDr8naxQ2dRO9c4Ezo3NHHXhz8L0tTSRYWhiwyA=
 github.com/projectdiscovery/utils v0.11.0 h1:CxImZSRyj9spy1wpB9HKJopr5MsIPm2r5iS8uyhAMoQ=
