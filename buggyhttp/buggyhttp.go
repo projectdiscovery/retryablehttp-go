@@ -4,9 +4,11 @@ package buggyhttp
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -133,9 +135,79 @@ func foo(w http.ResponseWriter, req *http.Request) {
 	_, _ = fmt.Fprintf(w, "foo")
 }
 
+// Server is a configurable instance of the buggy test server. Each instance
+// keeps its own state (so tests do not share a global counter) and can bind an
+// ephemeral port, avoiding conflicts with other services running locally.
+type Server struct {
+	httpServer *http.Server
+	// count drives the /successAfter endpoint, per instance.
+	count atomic.Int64
+}
+
+// New returns a new, not yet listening, buggy server.
+func New() *Server {
+	return &Server{}
+}
+
+func (s *Server) mux() *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/foo", foo)
+	mux.HandleFunc("/successAfter", s.successAfter)
+	mux.HandleFunc("/emptyResponse", emptyResponse)
+	mux.HandleFunc("/unexpectedEOF", unexpectedEOF)
+	mux.HandleFunc("/endlessBody", endlessBody)
+	mux.HandleFunc("/endlessWaitTime", endlessWaitTime)
+	mux.HandleFunc("/superSlow", superSlow)
+	mux.HandleFunc("/messyHeaders", messyHeaders)
+	mux.HandleFunc("/messyEncoding", messyEncoding)
+	mux.HandleFunc("/infiniteRedirects", infiniteRedirects)
+	return mux
+}
+
+// Start binds an ephemeral port on 127.0.0.1, serves in the background and
+// returns the base URL (e.g. http://127.0.0.1:54321). The listener is bound
+// before returning, so the URL is ready to receive requests.
+func (s *Server) Start() (string, error) {
+	return s.start("127.0.0.1:0")
+}
+
+// StartPort binds the given port (all interfaces) and serves in the background.
+func (s *Server) StartPort(port int) error {
+	_, err := s.start(fmt.Sprintf(":%d", port))
+	return err
+}
+
+func (s *Server) start(addr string) (string, error) {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return "", err
+	}
+	s.httpServer = &http.Server{Handler: s.mux()}
+	go s.httpServer.Serve(ln) //nolint
+	return "http://" + ln.Addr().String(), nil
+}
+
+// StartTLS binds the given port for TLS and serves in the background.
+func (s *Server) StartTLS(port int, certFile, keyFile string) error {
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		return err
+	}
+	s.httpServer = &http.Server{Handler: s.mux()}
+	go s.httpServer.ServeTLS(ln, certFile, keyFile) //nolint
+	return nil
+}
+
+// Close shuts the server down.
+func (s *Server) Close() error {
+	if s.httpServer != nil {
+		return s.httpServer.Shutdown(context.Background())
+	}
+	return nil
+}
+
 // generates recoverable errors until SuccessAfter attempts => after it 200 + body
-var count int // as of now a local horrible variable suffice
-func successAfter(w http.ResponseWriter, req *http.Request) {
+func (s *Server) successAfter(w http.ResponseWriter, req *http.Request) {
 	successAfter := defaultSuccessAfterThreshold
 	if req.FormValue("successAfter") != "" {
 		if i, err := strconv.Atoi(req.FormValue("successAfter")); err == nil {
@@ -143,8 +215,7 @@ func successAfter(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	count++
-	if count <= successAfter {
+	if s.count.Add(1) <= int64(successAfter) {
 		hj, _ := w.(http.Hijacker)
 		conn, bufrw, _ := hj.Hijack()
 		defer func() {
@@ -164,68 +235,36 @@ func successAfter(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// zeroes attempts and return 200 + valid body
-	count = 0
+	s.count.Store(0)
 	_, _ = fmt.Fprintf(w, "foo")
 }
 
 var (
-	server    *http.Server
-	serverTLS *http.Server
+	defaultServer    *Server
+	defaultServerTLS *Server
 )
 
-// Listen on specified port
+// Listen on the specified port using a package-level server.
+// Deprecated: prefer New().Start() / New().StartPort() for an isolated, port
+// configurable instance.
 func Listen(port int) {
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/foo", foo)
-	mux.HandleFunc("/successAfter", successAfter)
-	mux.HandleFunc("/emptyResponse", emptyResponse)
-	mux.HandleFunc("/unexpectedEOF", unexpectedEOF)
-	mux.HandleFunc("/endlessBody", endlessBody)
-	mux.HandleFunc("/endlessWaitTime", endlessWaitTime)
-	mux.HandleFunc("/superSlow", superSlow)
-	mux.HandleFunc("/messyHeaders", messyHeaders)
-	mux.HandleFunc("/messyEncoding", messyEncoding)
-	mux.HandleFunc("/infiniteRedirects", infiniteRedirects)
-
-	server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: mux,
-	}
-
-	go server.ListenAndServe() //nolint
+	defaultServer = New()
+	_ = defaultServer.StartPort(port)
 }
 
-// ListenTLS because buggyhttp also supports bugged TLS
+// ListenTLS because buggyhttp also supports bugged TLS.
+// Deprecated: prefer New().StartTLS().
 func ListenTLS(port int, certFile, keyFile string) {
-	serverTLS = &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: newMux(),
-	}
-
-	go serverTLS.ListenAndServeTLS(certFile, keyFile) //nolint
+	defaultServerTLS = New()
+	_ = defaultServerTLS.StartTLS(port, certFile, keyFile)
 }
 
-func newMux() *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/foo", foo)
-	mux.HandleFunc("/successAfter", successAfter)
-	mux.HandleFunc("/emptyResponse", emptyResponse)
-	mux.HandleFunc("/unexpectedEOF", unexpectedEOF)
-	mux.HandleFunc("/endlessBody", endlessBody)
-	mux.HandleFunc("/endlessWaitTime", endlessWaitTime)
-	mux.HandleFunc("/superSlow", superSlow)
-	mux.HandleFunc("/messyHeaders", messyHeaders)
-	mux.HandleFunc("/infiniteRedirects", infiniteRedirects)
-	return mux
-}
-
-// Stop the server
+// Stop the package-level servers started via Listen/ListenTLS.
 func Stop() {
-	if server != nil {
-		_ = server.Shutdown(context.Background())
+	if defaultServer != nil {
+		_ = defaultServer.Close()
 	}
-	if serverTLS != nil {
-		_ = serverTLS.Shutdown(context.Background())
+	if defaultServerTLS != nil {
+		_ = defaultServerTLS.Close()
 	}
 }

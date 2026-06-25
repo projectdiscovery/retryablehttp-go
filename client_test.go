@@ -152,7 +152,7 @@ func TestClient_Do(t *testing.T) {
 // Request to /foo => 200 + valid body
 func testClientSuccess_Do(t *testing.T, body interface{}) {
 	// Create a request
-	req, err := NewRequest("GET", "http://127.0.0.1:8080/foo", body)
+	req, err := NewRequest("GET", testServerURL+"/foo", body)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -215,7 +215,7 @@ func testClientSuccess_Do(t *testing.T, body interface{}) {
 func TestClientRetry_Do(t *testing.T) {
 	expectedRetries := 3
 	// Create a generic request towards /successAfter passing the number of times before the same request is successful
-	req, err := NewRequest("GET", fmt.Sprintf("http://127.0.0.1:8080/successAfter?successAfter=%d", expectedRetries), nil)
+	req, err := NewRequest("GET", fmt.Sprintf("%s/successAfter?successAfter=%d", testServerURL, expectedRetries), nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -245,7 +245,7 @@ func TestClientRetry_Do(t *testing.T) {
 func TestClientRetryWithBody_Do(t *testing.T) {
 	expectedRetries := 5
 	// Create a generic request towards /successAfter passing the number of times before the same request is successful
-	req, err := NewRequest("GET", fmt.Sprintf("http://127.0.0.1:8080/successAfter?successAfter=%d", expectedRetries), "request with body")
+	req, err := NewRequest("GET", fmt.Sprintf("%s/successAfter?successAfter=%d", testServerURL, expectedRetries), "request with body")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -275,7 +275,7 @@ func TestClientRetryWithBody_Do(t *testing.T) {
 // Expected: The library should keep on retrying until the final timeout or maximum retries amount
 func TestClientEmptyResponse_Do(t *testing.T) {
 	// Create a request
-	req, err := NewRequest("GET", "http://127.0.0.1:8080/emptyResponse", nil)
+	req, err := NewRequest("GET", testServerURL+"/emptyResponse", nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -299,7 +299,7 @@ func TestClientEmptyResponse_Do(t *testing.T) {
 // Expected: The library should keep on retrying until the final timeout or maximum retries amount
 func TestClientUnexpectedEOF_Do(t *testing.T) {
 	// Create a request
-	req, err := NewRequest("GET", "http://127.0.0.1:8080/unexpectedEOF", nil)
+	req, err := NewRequest("GET", testServerURL+"/unexpectedEOF", nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -323,7 +323,7 @@ func TestClientUnexpectedEOF_Do(t *testing.T) {
 // Expected: The library should read until a certain limit with return code 200
 func TestClientEndlessBody_Do(t *testing.T) {
 	// Create a request
-	req, err := NewRequest("GET", "http://127.0.0.1:8080/endlessBody", nil)
+	req, err := NewRequest("GET", testServerURL+"/endlessBody", nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -352,7 +352,7 @@ func TestClientEndlessBody_Do(t *testing.T) {
 // Expected: The library should stop reading headers after a certain amount or go into timeout
 func TestClientMessyHeaders_Do(t *testing.T) {
 	// Create a request
-	req, err := NewRequest("GET", "http://127.0.0.1:8080/messyHeaders", nil)
+	req, err := NewRequest("GET", testServerURL+"/messyHeaders", nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -380,7 +380,7 @@ func TestClientMessyHeaders_Do(t *testing.T) {
 // Expected: The library should be successful as all strings are treated as runes
 func TestClientMessyEncoding_Do(t *testing.T) {
 	// Create a request
-	req, err := NewRequest("GET", "http://127.0.0.1:8080/messyEncoding", nil)
+	req, err := NewRequest("GET", testServerURL+"/messyEncoding", nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -451,7 +451,7 @@ func TestWrapTransport_Request(t *testing.T) {
 
 	client := NewClient(options)
 
-	req, err := NewRequest("GET", "http://127.0.0.1:8080/foo", nil)
+	req, err := NewRequest("GET", testServerURL+"/foo", nil)
 	require.NoError(t, err)
 
 	resp, err := client.Do(req)
@@ -480,7 +480,7 @@ func TestWrapTransport_ModifyRequest(t *testing.T) {
 
 	client := NewClient(options)
 
-	req, err := NewRequest("GET", "http://127.0.0.1:8080/foo", nil)
+	req, err := NewRequest("GET", testServerURL+"/foo", nil)
 	require.NoError(t, err)
 
 	resp, err := client.Do(req)
@@ -521,7 +521,7 @@ func TestWrapTransport_Chain(t *testing.T) {
 
 	client := NewClient(options)
 
-	req, err := NewRequest("GET", "http://127.0.0.1:8080/foo", nil)
+	req, err := NewRequest("GET", testServerURL+"/foo", nil)
 	require.NoError(t, err)
 
 	resp, err := client.Do(req)
@@ -562,9 +562,22 @@ func (t *testTransportWrapper) RoundTrip(req *http.Request) (*http.Response, err
 	return t.base.RoundTrip(req)
 }
 
+// testServerURL is the base URL of the buggyhttp instance shared by the tests.
+// It binds an ephemeral port so the suite does not collide with anything already
+// listening on a fixed port locally.
+var testServerURL string
+
 func TestMain(m *testing.M) {
-	// start buggyhttp
-	buggyhttp.Listen(8080)
-	defer buggyhttp.Stop()
-	os.Exit(m.Run())
+	// start buggyhttp on an ephemeral port
+	srv := buggyhttp.New()
+	base, err := srv.Start()
+	if err != nil {
+		fmt.Printf("could not start buggyhttp: %s\n", err)
+		os.Exit(1)
+	}
+	testServerURL = base
+
+	code := m.Run()
+	_ = srv.Close()
+	os.Exit(code)
 }
