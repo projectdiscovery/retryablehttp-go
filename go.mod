@@ -29,7 +29,7 @@ require (
 	github.com/miekg/dns v1.1.62 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/projectdiscovery/blackrock v0.0.1 // indirect
+	github.com/projectdiscovery/blackrock v0.0.2 // indirect
 	github.com/projectdiscovery/hmap v0.0.101 // indirect
 	github.com/projectdiscovery/networkpolicy v0.1.44 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.115 // indirect
