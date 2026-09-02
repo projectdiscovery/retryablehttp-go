@@ -213,13 +213,20 @@ func (r *Request) SetURL(u *urlutil.URL) {
 	r.Update()
 }
 
-// Clones and returns new Request
+// Clone returns a copy of the request. It does not mutate the original.
+// The urlutil URL is deep-copied and the stdlib URL comes from http.Request.Clone,
+// so query values written only to Request.URL.RawQuery are preserved on both
+// the original and the dump of the clone.
 func (r *Request) Clone(ctx context.Context) *Request {
-	r.Update()
-	ux := r.URL
+	ux := r.URL.Clone()
 	req := r.Request.Clone(ctx)
-	req.URL = ux.URL
-	ux.Update()
+	if req.URL != nil {
+		// Point the cloned urlutil wrapper at the cloned stdlib URL so later
+		// Update() on the copy cannot alias back to the original request.
+		ux.URL = req.URL
+	} else {
+		req.URL = ux.URL
+	}
 	var auth *Auth
 	if r.hasAuth() {
 		auth = &Auth{

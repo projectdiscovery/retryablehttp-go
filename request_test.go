@@ -394,3 +394,191 @@ func verifyGetBody(t *testing.T, req *retryablehttp.Request, expected []byte) {
 		t.Errorf("Read 2 mismatch. Got %s, want %s", string(data2), string(expected))
 	}
 }
+
+func TestCloneDoesNotMutateOriginal(t *testing.T) {
+	req, err := retryablehttp.NewRequest("GET", "https://example.com/api?token=abc", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Request.URL.RawQuery = "token=abc&auth=xyz"
+
+	origURL := req.URL
+	origStdlib := req.Request.URL
+	origRawQuery := req.Request.URL.RawQuery
+
+	cloned := req.Clone(context.Background())
+	if cloned == req {
+		t.Fatal("Clone returned the same pointer")
+	}
+	if cloned.URL == req.URL {
+		t.Fatal("Clone must not share the urlutil URL with the original")
+	}
+	if cloned.Request.URL == origStdlib {
+		t.Fatal("Clone must not share the stdlib URL with the original")
+	}
+
+	if req.URL != origURL {
+		t.Fatal("Clone must not replace the original urlutil URL")
+	}
+	if req.Request.URL != origStdlib {
+		t.Fatal("Clone must not replace the original stdlib URL")
+	}
+	if got := req.Request.URL.RawQuery; got != origRawQuery {
+		t.Fatalf("Clone mutated original RawQuery: got %q want %q", got, origRawQuery)
+	}
+
+	cloned.Request.URL.RawQuery = "mutated=1"
+	if req.Request.URL.RawQuery != origRawQuery {
+		t.Fatal("mutating the clone must not change the original RawQuery")
+	}
+}
+
+func TestDumpDoesNotMutateRawQuery(t *testing.T) {
+	req, err := retryablehttp.NewRequest("GET", "https://example.com/api?token=abc", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Request.URL.RawQuery = "token=abc&auth=xyz"
+
+	origURL := req.URL
+	origStdlib := req.Request.URL
+
+	dumped, err := req.Dump()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if req.URL != origURL {
+		t.Fatal("Dump must not replace the original urlutil URL")
+	}
+	if req.Request.URL != origStdlib {
+		t.Fatal("Dump must not replace the original stdlib URL")
+	}
+	if got := req.Request.URL.RawQuery; got != "token=abc&auth=xyz" {
+		t.Fatalf("Dump mutated original RawQuery: got %q", got)
+	}
+	if !bytes.Contains(dumped, []byte("auth=xyz")) {
+		t.Fatalf("Dump should include query values present on the stdlib URL, got:\n%s", dumped)
+	}
+}
+
+func TestClonePreservesRequestFields(t *testing.T) {
+	req, err := retryablehttp.NewRequest("POST", "https://example.com/api?token=abc", strings.NewReader("hello"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("X-Custom", "one")
+	req.Auth = &retryablehttp.Auth{
+		Type:     retryablehttp.DigestAuth,
+		Username: "user",
+		Password: "pass",
+	}
+
+	cloned := req.Clone(context.Background())
+
+	if cloned.Method != req.Method {
+		t.Fatalf("method: got %q want %q", cloned.Method, req.Method)
+	}
+	if cloned.Host != req.Host {
+		t.Fatalf("host: got %q want %q", cloned.Host, req.Host)
+	}
+	if cloned.URL.Path != req.URL.Path {
+		t.Fatalf("path: got %q want %q", cloned.URL.Path, req.URL.Path)
+	}
+	if cloned.Header.Get("X-Custom") != "one" {
+		t.Fatalf("headers: got %q", cloned.Header.Get("X-Custom"))
+	}
+	if cloned.Auth == nil || cloned.Auth == req.Auth {
+		t.Fatal("auth must be copied, not shared")
+	}
+	if cloned.Auth.Username != "user" || cloned.Auth.Password != "pass" {
+		t.Fatalf("auth values: %+v", cloned.Auth)
+	}
+	if cloned.Metrics != (retryablehttp.Metrics{}) {
+		t.Fatalf("metrics should not be cloned: %+v", cloned.Metrics)
+	}
+
+	cloned.Header.Set("X-Custom", "two")
+	cloned.Auth.Username = "other"
+	if req.Header.Get("X-Custom") != "one" {
+		t.Fatal("changing clone headers must not change the original")
+	}
+	if req.Auth.Username != "user" {
+		t.Fatal("changing clone auth must not change the original")
+	}
+}
+
+func TestCloneThenUpdateDoesNotAffectOriginal(t *testing.T) {
+	req, err := retryablehttp.NewRequest("GET", "https://example.com/api?token=abc", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	origRawQuery := req.Request.URL.RawQuery
+	origURL := req.URL
+	origStdlib := req.Request.URL
+
+	cloned := req.Clone(context.Background())
+	cloned.URL.Query().Add("extra", "1")
+	cloned.Update()
+
+	if req.URL != origURL || req.Request.URL != origStdlib {
+		t.Fatal("Update on clone must not replace original URL pointers")
+	}
+	if req.Request.URL.RawQuery != origRawQuery {
+		t.Fatalf("Update on clone mutated original RawQuery: got %q", req.Request.URL.RawQuery)
+	}
+	if req.URL.Query().Get("extra") != "" {
+		t.Fatal("Update on clone must not add params to the original")
+	}
+	if cloned.Request.URL.RawQuery == origRawQuery || cloned.URL.Query().Get("extra") != "1" {
+		t.Fatalf("clone should commit extra=1, got RawQuery %q", cloned.Request.URL.RawQuery)
+	}
+}
+
+func TestDumpDoesNotCommitUnupdatedParamsOntoOriginal(t *testing.T) {
+	req, err := retryablehttp.NewRequest("GET", "https://example.com/api?token=abc", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.URL.Query().Add("extra", "1")
+
+	dumped, err := req.Dump()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := req.Request.URL.RawQuery; got != "token=abc" {
+		t.Fatalf("Dump must not call Update on the original, RawQuery=%q", got)
+	}
+	if bytes.Contains(dumped, []byte("extra=1")) {
+		t.Fatalf("Dump should not encode params that were never Update()'d, got:\n%s", dumped)
+	}
+
+	req.Update()
+	dumped, err = req.Dump()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(dumped, []byte("extra=1")) {
+		t.Fatalf("Dump after Update should include committed params, got:\n%s", dumped)
+	}
+}
+
+func TestDumpPreservesBody(t *testing.T) {
+	req, err := retryablehttp.NewRequest("POST", "https://example.com/api", strings.NewReader("payload-body"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dumped, err := req.Dump()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(dumped, []byte("payload-body")) {
+		t.Fatalf("Dump should still include the body, got:\n%s", dumped)
+	}
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != "payload-body" {
+		t.Fatalf("Dump must not consume the original body, got %q", body)
+	}
+}
