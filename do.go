@@ -120,6 +120,7 @@ retryLoop:
 		select {
 		case <-mainCtx.Done():
 			timer.Stop()
+			err = mainCtx.Err()
 			break retryLoop
 		case <-req.Context().Done():
 			timer.Stop()
