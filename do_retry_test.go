@@ -108,3 +108,84 @@ func TestDoRequestCancelDuringBackoffReturnsPromptly(t *testing.T) {
 		t.Fatal("Do did not return after request context was cancelled")
 	}
 }
+
+func TestDoMainTimeoutError(t *testing.T) {
+	transportErr := errors.New("connection failed")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+
+	for _, tt := range []struct {
+		name      string
+		transport bool
+		handler   bool
+		exhaust   bool
+	}{
+		{name: "response/default"},
+		{name: "response/handler", handler: true},
+		{name: "transport/default", transport: true},
+		{name: "transport/handler", transport: true, handler: true},
+		{name: "exhausted/default", transport: true, exhaust: true},
+		{name: "exhausted/handler", transport: true, handler: true, exhaust: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := Options{
+				RetryWaitMin: time.Second,
+				RetryWaitMax: time.Second,
+				Timeout:      50 * time.Millisecond,
+				RetryMax:     5,
+				CheckRetry:   alwaysRetry,
+			}
+			if tt.transport {
+				opts.HttpClient = &http.Client{Transport: timeoutErrorTransport{err: transportErr}}
+			}
+			if tt.exhaust {
+				opts.Timeout = 0
+				opts.RetryMax = 0
+			}
+			client := NewClient(opts)
+			defer client.HTTPClient.CloseIdleConnections()
+			defer client.HTTPClient2.CloseIdleConnections()
+
+			handlerCalled := false
+			var handlerErr error
+			if tt.handler {
+				client.ErrorHandler = func(resp *http.Response, err error, _ int) (*http.Response, error) {
+					handlerCalled = true
+					handlerErr = err
+					return PassthroughErrorHandler(resp, err, 0)
+				}
+			}
+
+			req, err := NewRequest(http.MethodGet, srv.URL, nil)
+			require.NoError(t, err)
+			attempts := 0
+			client.RequestLogHook = func(_ *http.Request, _ int) {
+				attempts++
+			}
+			resp, err := client.Do(req)
+			if resp != nil {
+				_ = resp.Body.Close()
+			}
+			wantErr := error(context.DeadlineExceeded)
+			if tt.exhaust {
+				wantErr = transportErr
+			}
+			require.ErrorIs(t, err, wantErr)
+			require.Equal(t, 1, attempts)
+			if tt.handler {
+				require.True(t, handlerCalled)
+				require.ErrorIs(t, handlerErr, wantErr)
+			}
+		})
+	}
+}
+
+type timeoutErrorTransport struct {
+	err error
+}
+
+func (rt timeoutErrorTransport) RoundTrip(_ *http.Request) (*http.Response, error) {
+	return nil, rt.err
+}
