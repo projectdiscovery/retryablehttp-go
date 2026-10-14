@@ -2,7 +2,7 @@ name: 🔀 Auto merge PR
 
 on:
   workflow_run:
-    workflows: ["🔨 Build Test"]
+    workflows: ["♾️ Compatibility Checks"]
     types: [completed]
 
 permissions:
