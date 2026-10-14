@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"sync/atomic"
 	"time"
-
-	"golang.org/x/net/http2"
 )
 
 // Client is used to make HTTP requests. It adds additional functionality
@@ -13,7 +11,7 @@ import (
 type Client struct {
 	// HTTPClient is the internal HTTP client (http1x + http2 via connection upgrade upgrade).
 	HTTPClient *http.Client
-	// HTTPClient is the internal HTTP client configured to fallback to native http2 at transport level
+	// HTTPClient2 is a copy of HTTPClient that attempts native http2 at transport level, used as fallback
 	HTTPClient2 *http.Client
 
 	requestCounter atomic.Uint32
@@ -111,14 +109,16 @@ func NewClient(options Options) *Client {
 		httpclient = DefaultPooledClient()
 	}
 
-	httpclient2 := DefaultClient()
-	if err := http2.ConfigureTransport(httpclient2.Transport.(*http.Transport)); err != nil {
-		return nil
-	}
-
 	if options.HttpClient == nil && options.TLSSessionCacheSize > 0 {
 		applyTLSSessionCache(httpclient, options.TLSSessionCacheSize)
-		applyTLSSessionCache(httpclient2, options.TLSSessionCacheSize)
+	}
+
+	// Derive the HTTP/2 fallback client from httpclient so both send requests
+	// the same way. This must happen before WrapTransport hides the
+	// *http.Transport that newHTTP2Client clones.
+	httpclient2, err := newHTTP2Client(httpclient)
+	if err != nil {
+		return nil
 	}
 
 	// Apply transport wrapper if provided
