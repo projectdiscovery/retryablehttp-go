@@ -68,7 +68,13 @@ retryLoop:
 
 		// if err is equal to missing minor protocol version retry with http/2
 		if err != nil && stringsutil.ContainsAny(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"", "net/http: HTTP/1.x transport connection broken: malformed HTTP response") {
-			resp, err = c.HTTPClient2.Do(req.Request)
+			if req.hasAuth() && req.Auth.Type == DigestAuth {
+				digestTransport := dac.NewTransport(req.Auth.Username, req.Auth.Password)
+				digestTransport.HTTPClient = c.HTTPClient2
+				resp, err = digestTransport.RoundTrip(req.Request)
+			} else {
+				resp, err = c.HTTPClient2.Do(req.Request)
+			}
 			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
 		}
 

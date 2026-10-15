@@ -9,6 +9,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -143,3 +144,54 @@ func TestNewClientHTTP2FallbackNegotiatesHTTP2(t *testing.T) {
 		require.Equal(t, tt.protoMajor, resp.ProtoMajor, tt.name)
 	}
 }
+
+// h2OnceListener answers the first connection with an HTTP/2 status line to trigger fallback.
+type h2OnceListener struct {
+	net.Listener
+	n atomic.Int32
+}
+
+func (l *h2OnceListener) Accept() (net.Conn, error) {
+	for {
+		c, err := l.Listener.Accept()
+		if err != nil || l.n.Add(1) > 1 {
+			return c, err
+		}
+		_, _ = c.Read(make([]byte, 4096))
+		_, _ = c.Write([]byte("HTTP/2 200 OK\r\nContent-Length: 0\r\n\r\n"))
+		_ = c.Close()
+	}
+}
+
+func TestDoHTTP2FallbackPreservesDigestAuth(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = ln.Close() })
+
+	var authenticated atomic.Bool
+	server := http.Server{
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !strings.HasPrefix(r.Header.Get("Authorization"), "Digest ") {
+				w.Header().Set("WWW-Authenticate", `Digest realm="r", nonce="n", qop="auth"`)
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			authenticated.Store(true)
+			w.WriteHeader(http.StatusOK)
+		}),
+	}
+	go func() { _ = server.Serve(&h2OnceListener{Listener: ln}) }()
+	t.Cleanup(func() { _ = server.Close() })
+
+	client := NewClient(Options{RetryMax: 0})
+	req, err := NewRequest(http.MethodGet, "http://"+ln.Addr().String()+"/", nil)
+	require.NoError(t, err)
+	req.Auth = &Auth{Type: DigestAuth, Username: "u", Password: "p"}
+
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.True(t, authenticated.Load(), "request should have authenticated via Digest Auth on fallback")
+}
+

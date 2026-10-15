@@ -132,7 +132,7 @@ func getFastDialer() (*fastdialer.Dialer, error) {
 	fdInit.Do(func() {
 		opts := fastdialer.DefaultOptions
 		opts.CacheType = fastdialer.Memory
-		fd, err = fastdialer.NewDialer(fastdialer.DefaultOptions)
+		fd, err = fastdialer.NewDialer(opts)
 	})
 	return fd, err
 }
