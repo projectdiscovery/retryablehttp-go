@@ -481,8 +481,8 @@ func TestClonePreservesRequestFields(t *testing.T) {
 	if cloned.Host != req.Host {
 		t.Fatalf("host: got %q want %q", cloned.Host, req.Host)
 	}
-	if cloned.URL.Path != req.URL.Path {
-		t.Fatalf("path: got %q want %q", cloned.URL.Path, req.URL.Path)
+	if cloned.Path != req.Path {
+		t.Fatalf("path: got %q want %q", cloned.Path, req.Path)
 	}
 	if cloned.Header.Get("X-Custom") != "one" {
 		t.Fatalf("headers: got %q", cloned.Header.Get("X-Custom"))
