@@ -131,8 +131,9 @@ var (
 func getFastDialer() (*fastdialer.Dialer, error) {
 	fdInit.Do(func() {
 		opts := fastdialer.DefaultOptions
+		// Keep the DNS cache in memory whatever the fastdialer default is.
 		opts.CacheType = fastdialer.Memory
-		fd, err = fastdialer.NewDialer(fastdialer.DefaultOptions)
+		fd, err = fastdialer.NewDialer(opts)
 	})
 	return fd, err
 }
