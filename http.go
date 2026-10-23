@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/projectdiscovery/fastdialer/fastdialer"
+	"golang.org/x/net/http2"
 )
 
 // DisableZTLSFallback disables use of ztls when there is error in tls handshake
@@ -77,6 +78,36 @@ func DefaultPooledClient() *http.Client {
 	}
 }
 
+// newHTTP2Client returns a copy of client for the fallback in [Client.Do]. The
+// copy keeps the proxy, dialer, TLS config, cookie jar, redirect policy and
+// timeout of client, and attempts HTTP/2 on its own clone of the transport.
+//
+// A transport other than [*http.Transport] cannot be cloned, so the copy
+// shares it as is rather than bypassing it.
+func newHTTP2Client(client *http.Client) (*http.Client, error) {
+	c := *client
+
+	rt := client.Transport
+	if rt == nil {
+		rt = http.DefaultTransport
+	}
+	transport, ok := rt.(*http.Transport)
+	if !ok {
+		return &c, nil
+	}
+
+	transport = transport.Clone()
+	// Without this, a custom TLS config or dialer disables HTTP/2, and
+	// http2.ConfigureTransport is a no-op since Go 1.27.
+	transport.ForceAttemptHTTP2 = true
+	if err := http2.ConfigureTransport(transport); err != nil {
+		return nil, err
+	}
+	c.Transport = transport
+
+	return &c, nil
+}
+
 // applyTLSSessionCache configures the TLS session cache size for an
 // [http.Client].
 //
@@ -100,8 +131,9 @@ var (
 func getFastDialer() (*fastdialer.Dialer, error) {
 	fdInit.Do(func() {
 		opts := fastdialer.DefaultOptions
+		// Keep the DNS cache in memory whatever the fastdialer default is.
 		opts.CacheType = fastdialer.Memory
-		fd, err = fastdialer.NewDialer(fastdialer.DefaultOptions)
+		fd, err = fastdialer.NewDialer(opts)
 	})
 	return fd, err
 }

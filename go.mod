@@ -5,10 +5,10 @@ go 1.26.0
 require (
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/projectdiscovery/fastdialer v0.5.22
-	github.com/projectdiscovery/utils v0.11.6
+	github.com/projectdiscovery/fastdialer v0.5.26
+	github.com/projectdiscovery/utils v0.11.10-0.20261013234757-73f5497aaf2e
 	github.com/stretchr/testify v1.12.1
-	golang.org/x/net v0.55.0
+	golang.org/x/net v0.58.0
 )
 
 require (
@@ -19,17 +19,17 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/gaissmai/bart v0.29.1 // indirect
+	github.com/gaissmai/bart v0.30.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
-	github.com/klauspost/compress v1.18.2 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/miekg/dns v1.1.62 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/projectdiscovery/blackrock v0.0.2 // indirect
 	github.com/projectdiscovery/hmap v0.0.102 // indirect
-	github.com/projectdiscovery/networkpolicy v0.1.52 // indirect
+	github.com/projectdiscovery/networkpolicy v0.1.54 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.116 // indirect
 	github.com/refraction-networking/utls v1.8.2 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
@@ -42,18 +42,17 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/rtred v0.1.2 // indirect
 	github.com/tidwall/tinyqueue v0.1.1 // indirect
-	github.com/weppos/publicsuffix-go v0.50.3-0.20260104170930-90713dec78f2 // indirect
-	github.com/zmap/rc2 v0.0.0-20190804163417-abaa70531248 // indirect
-	github.com/zmap/zcrypto v0.0.0-20240803002437-3a861682ac77 // indirect
+	github.com/weppos/publicsuffix-go v0.50.4-0.20260821095816-b0fdb5c2d345 // indirect
+	github.com/zmap/zcrypto v0.0.0-20260906180147-3ed30b1e9340 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
-	golang.org/x/mod v0.35.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
-	golang.org/x/tools v0.44.0 // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/tools v0.48.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
