@@ -54,21 +54,14 @@ retryLoop:
 			c.wrapContextWithTrace(req)
 		}
 
-		if req.hasAuth() && req.Auth.Type == DigestAuth {
-			digestTransport := dac.NewTransport(req.Auth.Username, req.Auth.Password)
-			digestTransport.HTTPClient = c.HTTPClient
-			resp, err = digestTransport.RoundTrip(req.Request)
-		} else {
-			// Attempt the request with standard behavior
-			resp, err = c.HTTPClient.Do(req.Request)
-		}
+		resp, err = send(c.HTTPClient, req)
 
 		// Check if we should continue with retries.
 		checkOK, checkErr := c.CheckRetry(req.Context(), resp, err)
 
 		// if err is equal to missing minor protocol version retry with http/2
 		if err != nil && stringsutil.ContainsAny(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"", "net/http: HTTP/1.x transport connection broken: malformed HTTP response") {
-			resp, err = c.HTTPClient2.Do(req.Request)
+			resp, err = send(c.HTTPClient2, req)
 			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
 		}
 
@@ -142,6 +135,18 @@ retryLoop:
 	}
 	c.closeIdleConnections()
 	return nil, fmt.Errorf("%s %s giving up after %d attempts: %w", req.Method, req.URL, retryMax+1, err)
+}
+
+// send makes one attempt at req using hc. With digest auth, the attempt
+// includes answering the server's challenge. Do sends the first attempt and
+// the HTTP/2 fallback through send, so the two differ only in the client.
+func send(hc *http.Client, req *Request) (*http.Response, error) {
+	if req.hasAuth() && req.Auth.Type == DigestAuth {
+		digestTransport := dac.NewTransport(req.Auth.Username, req.Auth.Password)
+		digestTransport.HTTPClient = hc
+		return digestTransport.RoundTrip(req.Request)
+	}
+	return hc.Do(req.Request)
 }
 
 // Try to read the response body so we can reuse this connection.
