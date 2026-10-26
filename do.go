@@ -1,7 +1,9 @@
 package retryablehttp
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -9,7 +11,6 @@ import (
 	"net/http/httptrace"
 	"time"
 
-	dac "github.com/Mzack9999/go-http-digest-auth-client"
 	stringsutil "github.com/projectdiscovery/utils/strings"
 )
 
@@ -54,21 +55,14 @@ retryLoop:
 			c.wrapContextWithTrace(req)
 		}
 
-		if req.hasAuth() && req.Auth.Type == DigestAuth {
-			digestTransport := dac.NewTransport(req.Auth.Username, req.Auth.Password)
-			digestTransport.HTTPClient = c.HTTPClient
-			resp, err = digestTransport.RoundTrip(req.Request)
-		} else {
-			// Attempt the request with standard behavior
-			resp, err = c.HTTPClient.Do(req.Request)
-		}
+		resp, err = c.send(c.HTTPClient, req)
 
 		// Check if we should continue with retries.
 		checkOK, checkErr := c.CheckRetry(req.Context(), resp, err)
 
 		// if err is equal to missing minor protocol version retry with http/2
 		if err != nil && stringsutil.ContainsAny(err.Error(), "net/http: HTTP/1.x transport connection broken: malformed HTTP version \"HTTP/2\"", "net/http: HTTP/1.x transport connection broken: malformed HTTP response") {
-			resp, err = c.HTTPClient2.Do(req.Request)
+			resp, err = c.send(c.HTTPClient2, req)
 			checkOK, checkErr = c.CheckRetry(req.Context(), resp, err)
 		}
 
@@ -142,6 +136,70 @@ retryLoop:
 	}
 	c.closeIdleConnections()
 	return nil, fmt.Errorf("%s %s giving up after %d attempts: %w", req.Method, req.URL, retryMax+1, err)
+}
+
+// send makes one attempt at req using hc. With digest auth, the attempt sends a
+// clone of req and answers a Digest challenge in the 401 response by sending
+// another clone with an Authorization header; if no challenge can be answered,
+// it returns the 401. Do sends the first attempt and the HTTP/2 fallback
+// through send, so the two differ only in the client.
+func (c *Client) send(hc *http.Client, req *Request) (*http.Response, error) {
+	if !req.hasAuth() || req.Auth.Type != DigestAuth {
+		return hc.Do(req.Request)
+	}
+
+	// Both requests send a copy of the body. A server that rejects the first
+	// one may stop reading partway, which would leave req.Body partly read
+	// for the second request and for later retries.
+	body, err := readBody(req.Request)
+	if err != nil {
+		return nil, fmt.Errorf("read body for digest auth: %w", err)
+	}
+	resp, err := hc.Do(withBody(req.Request, body))
+	if err != nil || resp.StatusCode != http.StatusUnauthorized {
+		return resp, err
+	}
+	challenge, ok := findDigestChallenge(resp.Header)
+	if !ok {
+		return resp, nil
+	}
+	c.drainBody(req, resp)
+
+	authReq := withBody(req.Request, body)
+	authorization := challenge.authorization(req.Auth, authReq.Method, authReq.URL.RequestURI(), body, rand.Text())
+	authReq.Header.Set("Authorization", authorization)
+	return hc.Do(authReq)
+}
+
+// readBody returns a copy of the request body, or nil if it has none. It reads
+// through GetBody when set, which leaves req.Body as it is.
+func readBody(req *http.Request) ([]byte, error) {
+	body := req.Body
+	if req.GetBody != nil {
+		var err error
+		if body, err = req.GetBody(); err != nil {
+			return nil, err
+		}
+	}
+	if body == nil || body == http.NoBody {
+		return nil, nil
+	}
+	defer func() {
+		_ = body.Close()
+	}()
+	return io.ReadAll(body)
+}
+
+// withBody returns a clone of req that reads its body from body.
+func withBody(req *http.Request, body []byte) *http.Request {
+	clone := req.Clone(req.Context())
+	if body != nil {
+		clone.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader(body)), nil
+		}
+		clone.Body, _ = clone.GetBody()
+	}
+	return clone
 }
 
 // Try to read the response body so we can reuse this connection.

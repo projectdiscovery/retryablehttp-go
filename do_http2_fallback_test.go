@@ -9,6 +9,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -33,13 +34,36 @@ func serveHTTP2StatusLine(t *testing.T, conns *atomic.Int32) string {
 				return
 			}
 			conns.Add(1)
-			_, _ = c.Read(make([]byte, 4096))
-			_, _ = c.Write([]byte("HTTP/2 200 OK\r\nContent-Length: 0\r\n\r\n"))
-			_ = c.Close()
+			answerHTTP2StatusLine(c)
 		}
 	}()
 
 	return ln.Addr().String()
+}
+
+// answerHTTP2StatusLine reads a request from c, replies with an HTTP/2 status
+// line, and closes c.
+func answerHTTP2StatusLine(c net.Conn) {
+	_, _ = c.Read(make([]byte, 4096))
+	_, _ = c.Write([]byte("HTTP/2 200 OK\r\nContent-Length: 0\r\n\r\n"))
+	_ = c.Close()
+}
+
+// http2StatusLineOnce answers the first accepted connection with an HTTP/2
+// status line and hands later connections to the server.
+type http2StatusLineOnce struct {
+	net.Listener
+	answered atomic.Bool
+}
+
+func (l *http2StatusLineOnce) Accept() (net.Conn, error) {
+	for {
+		c, err := l.Listener.Accept()
+		if err != nil || !l.answered.CompareAndSwap(false, true) {
+			return c, err
+		}
+		answerHTTP2StatusLine(c)
+	}
 }
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)
@@ -90,6 +114,46 @@ func TestDoHTTP2FallbackUsesCallerClient(t *testing.T) {
 
 			require.Zero(t, targetConns.Load(), "fallback dialed the target directly")
 			require.EqualValues(t, 2, proxyConns.Load(), "first attempt and fallback should both use the proxy")
+		})
+	}
+}
+
+// TestDoHTTP2FallbackKeepsDigestAuth verifies that the HTTP/2 fallback in Do
+// answers a digest challenge, as the first attempt does.
+func TestDoHTTP2FallbackKeepsDigestAuth(t *testing.T) {
+	tests := []struct {
+		name     string
+		fallback bool
+	}{
+		{name: "first attempt"},
+		{name: "fallback", fallback: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if !strings.HasPrefix(r.Header.Get("Authorization"), `Digest username="u"`) {
+					w.Header().Set("WWW-Authenticate", `Digest realm="r", nonce="n", qop="auth"`)
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			}))
+			if tt.fallback {
+				ts.Listener = &http2StatusLineOnce{Listener: ts.Listener}
+			}
+			ts.Start()
+			t.Cleanup(ts.Close)
+
+			client := NewClient(Options{RetryMax: 0})
+			require.NotNil(t, client)
+
+			req, err := NewRequest(http.MethodGet, ts.URL, nil)
+			require.NoError(t, err)
+			req.Auth = &Auth{Type: DigestAuth, Username: "u", Password: "p"}
+
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+			_ = resp.Body.Close()
+			require.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 	}
 }
