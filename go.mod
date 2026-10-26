@@ -3,7 +3,6 @@ module github.com/projectdiscovery/retryablehttp-go
 go 1.26.0
 
 require (
-	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/projectdiscovery/fastdialer v0.5.26
 	github.com/projectdiscovery/utils v0.11.10-0.20261013234757-73f5497aaf2e
