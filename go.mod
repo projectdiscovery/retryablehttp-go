@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/projectdiscovery/fastdialer v0.5.26
+	github.com/projectdiscovery/fastdialer v0.6.1
 	github.com/projectdiscovery/utils v0.11.10
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/net v0.58.0
@@ -28,7 +28,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/projectdiscovery/blackrock v0.0.2 // indirect
 	github.com/projectdiscovery/hmap v0.0.104 // indirect
-	github.com/projectdiscovery/networkpolicy v0.1.54 // indirect
+	github.com/projectdiscovery/networkpolicy v0.1.57 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.116 // indirect
 	github.com/refraction-networking/utls v1.8.2 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
