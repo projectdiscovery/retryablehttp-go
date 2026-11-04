@@ -2,7 +2,9 @@ package retryablehttp
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -66,11 +68,10 @@ func CheckRecoverableErrors(ctx context.Context, resp *http.Response, err error)
 			if schemeErrorRegex.MatchString(v.Error()) {
 				return false, nil
 			}
-
-			// Don't retry if the error was due to TLS cert verification failure.
-			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
-				return false, nil
-			}
+		}
+		// Don't retry if the error was due to TLS cert verification failure.
+		if isCertificateVerificationError(err) {
+			return false, nil
 		}
 		// look for permanent errors
 		if errkit.IsKind(err, errkit.ErrKindNetworkPermanent) {
@@ -81,4 +82,20 @@ func CheckRecoverableErrors(ctx context.Context, resp *http.Response, err error)
 		return true, nil
 	}
 	return false, nil
+}
+
+// isCertificateVerificationError reports whether err comes from a failed TLS
+// certificate verification (unknown authority, hostname mismatch, invalid or
+// expired certificate). The same certificate fails again, so a retry does not
+// help. Since Go 1.20 crypto/tls wraps these errors in
+// *tls.CertificateVerificationError.
+func isCertificateVerificationError(err error) bool {
+	var verifyErr *tls.CertificateVerificationError
+	var unknownAuthorityErr x509.UnknownAuthorityError
+	var hostnameErr x509.HostnameError
+	var invalidErr x509.CertificateInvalidError
+	return errors.As(err, &verifyErr) ||
+		errors.As(err, &unknownAuthorityErr) ||
+		errors.As(err, &hostnameErr) ||
+		errors.As(err, &invalidErr)
 }
