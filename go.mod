@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/projectdiscovery/fastdialer v0.6.1
+	github.com/projectdiscovery/fastdialer v0.6.2
 	github.com/projectdiscovery/utils v0.11.13
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/net v0.60.0
