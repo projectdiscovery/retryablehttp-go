@@ -100,7 +100,11 @@ func newHTTP2Client(client *http.Client) (*http.Client, error) {
 	// Without this, a custom TLS config or dialer disables HTTP/2, and
 	// http2.ConfigureTransport is a no-op since Go 1.27.
 	transport.ForceAttemptHTTP2 = true
-	if err := http2.ConfigureTransport(transport); err != nil {
+	// ConfigureTransport stays despite its deprecation: on Go 1.26, the go.mod
+	// minimum, it routes HTTP/2 through golang.org/x/net/http2, and setting
+	// [http.Transport.Protocols] instead would switch to the copy bundled with
+	// net/http.
+	if err := http2.ConfigureTransport(transport); err != nil { //nolint:staticcheck // SA1019: see above.
 		return nil, err
 	}
 	c.Transport = transport
