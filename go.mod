@@ -4,8 +4,8 @@ go 1.26.0
 
 require (
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/projectdiscovery/fastdialer v0.6.2
-	github.com/projectdiscovery/utils v0.11.13
+	github.com/projectdiscovery/fastdialer v0.6.3
+	github.com/projectdiscovery/utils v0.11.14
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/net v0.60.0
 )
@@ -27,9 +27,9 @@ require (
 	github.com/miekg/dns v1.1.62 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/projectdiscovery/blackrock v0.0.2 // indirect
-	github.com/projectdiscovery/hmap v0.0.104 // indirect
-	github.com/projectdiscovery/networkpolicy v0.1.58 // indirect
-	github.com/projectdiscovery/retryabledns v1.0.118 // indirect
+	github.com/projectdiscovery/hmap v0.0.105 // indirect
+	github.com/projectdiscovery/networkpolicy v0.1.59 // indirect
+	github.com/projectdiscovery/retryabledns v1.0.119 // indirect
 	github.com/refraction-networking/utls v1.8.2 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
@@ -50,7 +50,7 @@ require (
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
