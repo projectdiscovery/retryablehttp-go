@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/projectdiscovery/fastdialer v0.6.3
-	github.com/projectdiscovery/utils v0.11.14
+	github.com/projectdiscovery/utils v0.11.15
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/net v0.60.0
 )
@@ -26,7 +26,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/miekg/dns v1.1.62 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/projectdiscovery/blackrock v0.0.2 // indirect
+	github.com/projectdiscovery/blackrock v0.0.4 // indirect
 	github.com/projectdiscovery/hmap v0.0.105 // indirect
 	github.com/projectdiscovery/networkpolicy v0.1.59 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.119 // indirect
